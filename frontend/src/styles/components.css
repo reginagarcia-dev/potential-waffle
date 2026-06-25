@@ -1,0 +1,124 @@
+@layer components {
+  .app-screen {
+    @apply min-h-dvh bg-app-bg text-fg px-4 pt-4 pb-6;
+  }
+
+  .top-nav {
+    @apply flex h-11 items-center justify-between;
+  }
+
+  .top-title {
+    @apply font-display text-h3 font-semibold tracking-tight;
+  }
+
+  .ui-card {
+    @apply rounded-md border border-line-subtle bg-surface/90 p-4 shadow-card backdrop-blur-sm;
+  }
+
+  .ui-card-tight {
+    @apply rounded-sm border border-line-subtle bg-surface-2/75 p-3 shadow-inner-soft;
+  }
+
+  .ui-card-title {
+    @apply text-body font-semibold text-fg;
+  }
+
+  .ui-card-meta {
+    @apply text-caption text-fg-muted;
+  }
+
+  .btn-primary {
+    @apply inline-flex h-12 items-center justify-center rounded-lg bg-brand px-4 font-semibold text-app-bg shadow-brand-glow transition active:scale-[0.99] hover:bg-brand-hover;
+  }
+
+  .btn-primary-wide {
+    @apply inline-flex h-12 w-full items-center justify-center rounded-lg bg-brand px-4 font-semibold text-app-bg shadow-brand-glow transition active:scale-[0.99] hover:bg-brand-hover;
+    background-image: linear-gradient(90deg, #04bcc2 0%, #06d1ca 100%);
+  }
+
+  .btn-ghost {
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-line-subtle bg-surface-2/60 px-4 text-body text-fg-secondary transition hover:bg-surface-2/80;
+  }
+
+  .btn-outline-brand {
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-brand/40 bg-brand-weak px-4 text-body font-medium text-brand transition hover:border-brand hover:bg-brand/20;
+  }
+
+  .list-row {
+    @apply flex h-12 items-center justify-between rounded-sm border border-line-subtle bg-surface-2/70 px-3;
+  }
+
+  .list-row-title {
+    @apply text-body text-fg;
+  }
+
+  .list-row-sub {
+    @apply text-caption text-fg-muted;
+  }
+
+  .field {
+    @apply h-11 w-full rounded-md border border-line-subtle bg-surface-2 px-3 text-body text-fg placeholder:text-fg-dim focus:outline-none focus:ring-2 focus:ring-brand/35;
+  }
+
+  .stepper-box {
+    @apply flex h-10 items-center justify-between rounded-md border border-line-subtle bg-surface-2 px-3;
+  }
+
+  .stepper-btn {
+    @apply inline-flex size-7 items-center justify-center rounded-full border border-line-subtle bg-surface text-title text-fg-secondary transition hover:text-fg;
+  }
+
+  .filter-chip {
+    @apply inline-flex h-7 items-center rounded-full border border-line-subtle px-3 text-caption text-fg-secondary;
+  }
+
+  .filter-chip-active {
+    @apply inline-flex h-7 items-center rounded-full border border-brand/40 bg-brand-weak px-3 text-caption text-brand;
+  }
+
+  .pr-badge {
+    @apply inline-flex h-5 items-center rounded-full bg-warning/20 px-2 text-caption font-semibold text-warning;
+  }
+
+  .sheet {
+    @apply rounded-t-xl border-t border-line-subtle bg-surface/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-float backdrop-blur-md;
+  }
+
+  .sheet-handle {
+    @apply mx-auto mb-3 h-1 w-10 rounded-full bg-white/20;
+  }
+
+  .timer-ring-wrap {
+    @apply rounded-full p-2;
+    background-image: conic-gradient(
+      from 180deg at 50% 50%,
+      #06c7c8 0%,
+      #0e2b3a 60%,
+      #0e2b3a 100%
+    );
+  }
+
+  .timer-core {
+    @apply flex size-44 items-center justify-center rounded-full bg-app-bg;
+  }
+
+  .timer-value {
+    @apply font-display text-display-md font-semibold leading-none text-fg tabular-nums;
+  }
+
+  .set-row {
+    @apply grid h-9 grid-cols-[20px_1fr_1fr_1fr_24px] items-center gap-2 text-body;
+  }
+
+  .set-cell-muted {
+    @apply text-fg-muted;
+  }
+
+  .set-cell-value {
+    @apply text-fg;
+  }
+
+  .set-cell-active {
+    @apply text-brand;
+  }
+}
