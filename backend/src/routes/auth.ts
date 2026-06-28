@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { users } from '../db/schema.js';
+import { users, workoutSessions } from '../db/schema.js';
 import { registerSchema, loginSchema, updatePreferencesSchema } from 'shared';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.js';
 
@@ -221,6 +221,12 @@ authRouter.patch('/preferences', authenticateToken, async (req: AuthenticatedReq
     if (!updatedUser) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    // Sync unit to any active session so the workout UI updates immediately
+    await db
+      .update(workoutSessions)
+      .set({ unit: preferredUnit })
+      .where(and(eq(workoutSessions.userId, req.userId!), eq(workoutSessions.status, 'active')));
 
     return res.json({
       id: updatedUser.id,

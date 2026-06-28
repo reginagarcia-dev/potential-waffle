@@ -1,146 +1,208 @@
-import React, { useState } from 'react';
-import { WorkoutSetResponse } from 'shared';
-import { CheckCircle2, Circle, Trash2, Award } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { WorkoutSetResponse } from "shared";
+import { CheckCircle2, Circle, Trash2, Award } from "lucide-react";
 
 interface SetRowProps {
   set: WorkoutSetResponse;
-  unit: 'lbs' | 'kg';
+  unit: "lbs" | "kg";
+  displaySetNumber?: number;
   onToggleComplete: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onUpdateValue: (field: "weight" | "reps", value: number | null) => void;
 }
 
 export const SetRow: React.FC<SetRowProps> = ({
   set,
   unit,
+  displaySetNumber,
   onToggleComplete,
   onEdit,
   onDelete,
+  onUpdateValue,
 }) => {
-  // Swipe to delete gestures
-  const [startX, setStartX] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const [editingField, setEditingField] = useState<"weight" | "reps" | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setStartX(e.touches[0].clientX);
-    setIsDragging(true);
+  useEffect(() => {
+    if (editingField && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingField]);
+
+  const startEdit = (field: "weight" | "reps") => {
+    const current = field === "weight" ? set.weight : set.reps;
+    setEditValue(current != null ? String(current) : "");
+    setEditingField(field);
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const currentX = e.touches[0].clientX;
-    const deltaX = currentX - startX;
-    
-    // Only allow left swiping
-    if (deltaX < 0) {
-      setTranslateX(Math.max(-100, deltaX));
+  const commitEdit = () => {
+    if (!editingField) return;
+    const trimmed = editValue.trim();
+    const parsed = trimmed === "" ? null : parseFloat(trimmed);
+    onUpdateValue(editingField, parsed != null && !isNaN(parsed) ? parsed : null);
+    setEditingField(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      commitEdit();
+    } else if (e.key === "Escape") {
+      setEditingField(null);
     }
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    if (translateX < -70) {
-      onDelete();
-    }
-    setTranslateX(0);
-  };
+  const weightHasValue = set.weight != null;
+  const repsHasValue = set.reps != null;
+
+  const weightDisplay = weightHasValue
+    ? String(set.weight)
+    : set.previousWeight != null
+      ? String(set.previousWeight)
+      : "—";
+
+  const repsDisplay = repsHasValue
+    ? String(set.reps)
+    : set.previousReps != null
+      ? String(set.previousReps)
+      : "—";
+
+  const pillBase =
+    "w-full justify-self-center rounded-full border px-3 py-2 text-center text-sm tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-ring";
+
+  const weightPillStyle = weightHasValue
+    ? `${pillBase} border-primary/30 bg-primary/10 font-semibold text-foreground hover:border-primary/60 hover:bg-primary/15`
+    : set.previousWeight != null
+      ? `${pillBase} border-dashed border-border bg-card font-medium text-muted-foreground/50 hover:border-primary/50 hover:bg-primary/10 hover:text-muted-foreground`
+      : `${pillBase} border-border bg-card font-semibold text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-foreground`;
+
+  const repsPillStyle = repsHasValue
+    ? `${pillBase} border-primary/30 bg-primary/10 font-semibold text-foreground hover:border-primary/60 hover:bg-primary/15`
+    : set.previousReps != null
+      ? `${pillBase} border-dashed border-border bg-card font-medium text-muted-foreground/50 hover:border-primary/50 hover:bg-primary/10 hover:text-muted-foreground`
+      : `${pillBase} border-border bg-card font-semibold text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-foreground`;
+
+  const inlineInputClass =
+    "w-full justify-self-center rounded-full border border-primary bg-primary/10 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
   return (
-    <div className="relative overflow-hidden rounded-lg bg-zinc-950">
-      {/* Background Delete Button Action */}
-      <div className="absolute inset-y-0 right-0 flex w-[100px] items-center justify-center bg-red-600/90 text-white transition-opacity">
-        <div className="flex flex-col items-center gap-1">
-          <Trash2 className="h-4 w-4" />
-          <span className="text-[10px] font-bold uppercase">Delete</span>
-        </div>
-      </div>
-
-      {/* Main Row Content */}
+    <div className="relative overflow-hidden rounded-xl">
       <div
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ transform: `translateX(${translateX}px)` }}
-        className="relative flex items-center justify-between border-b border-zinc-900 bg-zinc-900/40 py-3 px-4 transition-transform duration-200"
+        className={`relative grid grid-cols-[2rem_1fr_1fr_3rem_2.5rem] items-center gap-2 rounded-xl border px-4 py-3 transition-all ${
+          set.status === "completed"
+            ? "border-primary/35 bg-primary/5 shadow-glow"
+            : "border-border bg-surface/80 hover:border-primary/40 hover:bg-surface"
+        } ${
+          set.type === "warmup"
+            ? "border-border/70 bg-muted/25 text-muted-foreground"
+            : ""
+        }`}
       >
-        {/* Set Identifier Column */}
-        <div className="flex w-10 items-center">
-          {set.type === 'warmup' ? (
-            <span className="inline-flex items-center justify-center rounded-md bg-zinc-800 border border-zinc-700/60 px-1.5 py-0.5 text-[10px] font-black text-zinc-400">
+        {/* Set identifier — tap to open full edit sheet (RPE, set type, etc.) */}
+        <button
+          type="button"
+          onClick={onEdit}
+          className="flex items-center"
+          aria-label="Edit set details"
+        >
+          {set.type === "warmup" ? (
+            <span className="inline-flex size-7 items-center justify-center rounded-full border border-border bg-muted/60 text-xs font-bold text-muted-foreground">
               W
             </span>
           ) : (
-            <span className="text-sm font-black text-zinc-500">{set.setNumber}</span>
-          )}
-        </div>
-
-        {/* Previous Stats Column */}
-        <div className="flex flex-1 justify-start px-2">
-          {set.previousWeight && set.previousReps ? (
-            <span className="text-xs text-zinc-500 font-semibold truncate">
-              {set.previousWeight} × {set.previousReps}
+            <span
+              className={`text-sm font-bold tabular-nums ${
+                set.status === "completed" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              {displaySetNumber ?? set.setNumber}
             </span>
-          ) : (
-            <span className="text-xs text-zinc-600 font-semibold">—</span>
           )}
-        </div>
+        </button>
 
-        {/* Inputs Column: Weight & Reps */}
-        <div className="flex items-center gap-3 w-32 justify-end">
-          {/* Weight Button */}
+        {/* Weight cell */}
+        {editingField === "weight" ? (
+          <input
+            ref={inputRef}
+            type="number"
+            inputMode="decimal"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={handleKeyDown}
+            placeholder={set.previousWeight != null ? String(set.previousWeight) : "0"}
+            className={inlineInputClass}
+          />
+        ) : (
           <button
             type="button"
-            onClick={onEdit}
-            className={`rounded-lg bg-zinc-950 border border-zinc-800/80 px-2 py-1.5 text-center text-xs font-bold w-16 transition-colors hover:border-zinc-700 ${
-              set.weight ? 'text-white' : 'text-zinc-500'
-            }`}
+            onClick={() => startEdit("weight")}
+            className={`${weightPillStyle} max-w-24`}
           >
-            {set.weight ? `${set.weight}` : '—'}
-            <span className="text-[8px] text-zinc-500 ml-0.5">{unit}</span>
+            {weightDisplay}
+            <span className="ml-1 text-[10px] font-medium text-muted-foreground/60">
+              {unit}
+            </span>
           </button>
+        )}
 
-          {/* Reps Button */}
+        {/* Reps cell */}
+        {editingField === "reps" ? (
+          <input
+            ref={inputRef}
+            type="number"
+            inputMode="numeric"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={handleKeyDown}
+            placeholder={set.previousReps != null ? String(set.previousReps) : "0"}
+            className={inlineInputClass}
+          />
+        ) : (
           <button
             type="button"
-            onClick={onEdit}
-            className={`rounded-lg bg-zinc-950 border border-zinc-800/80 px-2 py-1.5 text-center text-xs font-bold w-12 transition-colors hover:border-zinc-700 ${
-              set.reps ? 'text-white' : 'text-zinc-500'
-            }`}
+            onClick={() => startEdit("reps")}
+            className={`${repsPillStyle} max-w-20`}
           >
-            {set.reps ? `${set.reps}` : '—'}
-            <span className="text-[8px] text-zinc-500 ml-0.5">r</span>
+            {repsDisplay}
           </button>
-        </div>
+        )}
 
-        {/* Optional RPE Column */}
-        <div className="flex w-10 justify-center">
-          <button
-            type="button"
-            onClick={onEdit}
-            className={`text-xs font-extrabold ${set.rpe ? 'text-teal-400' : 'text-zinc-600'}`}
-          >
-            {set.rpe ? `@${set.rpe}` : '@—'}
-          </button>
-        </div>
-
-        {/* Checkmark Status Column */}
-        <div className="flex w-10 justify-end items-center gap-1.5">
-          {set.isPr && set.status === 'completed' && (
-            <Award className="h-4 w-4 text-amber-500 fill-amber-500/10 animate-bounce" />
+        {/* Complete toggle */}
+        <div className="flex items-center justify-center gap-1">
+          {set.isPr && set.status === "completed" && (
+            <Award className="size-3.5 fill-accent/10 text-accent" />
           )}
           <button
             type="button"
             onClick={onToggleComplete}
-            className="text-zinc-500 transition-colors hover:text-teal-400"
+            aria-label={set.status === "completed" ? "Mark set incomplete" : "Complete set"}
+            className={`inline-flex size-9 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+              set.status === "completed"
+                ? "border-primary bg-primary/15 text-primary shadow-glow"
+                : "border-muted-foreground/40 bg-card text-muted-foreground hover:border-primary hover:bg-primary/10 hover:text-primary"
+            }`}
           >
-            {set.status === 'completed' ? (
-              <CheckCircle2 className="h-6 w-6 text-teal-400 fill-teal-950/20" />
+            {set.status === "completed" ? (
+              <CheckCircle2 className="size-6" />
             ) : (
-              <Circle className="h-6 w-6 text-zinc-800" />
+              <Circle className="size-6" />
             )}
           </button>
         </div>
+
+        {/* Delete */}
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label="Delete set"
+          className="inline-flex size-9 items-center justify-center justify-self-center rounded-full text-muted-foreground/70 transition-colors hover:bg-danger/10 hover:text-danger focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <Trash2 className="size-4" />
+        </button>
       </div>
     </div>
   );

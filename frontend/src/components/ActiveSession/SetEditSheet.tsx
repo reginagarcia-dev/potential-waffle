@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { WorkoutSetResponse } from "shared";
 import { X, Plus, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ProductButton } from "../ui/ProductButton";
 
 interface SetEditSheetProps {
   isOpen: boolean;
@@ -109,153 +111,196 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="m-auto w-[min(100%-2rem,40rem)] max-w-lg rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm focus:outline-none max-h-[85vh] overflow-y-auto"
+      className={cn(
+        "m-auto w-[min(100%-2rem,26rem)] max-w-md rounded-2xl border border-border bg-card p-0 text-foreground shadow-elevated",
+        "backdrop:bg-black/60 backdrop:backdrop-blur-sm",
+        "max-h-[85dvh] overflow-hidden focus:outline-none",
+      )}
     >
-      <div className="mx-auto max-w-lg">
+      <div className="flex max-h-[85dvh] flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
-          <h3 className="font-heading text-lg font-bold text-white">
-            Edit Set {set.setNumber}
-          </h3>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <div className="px-5 pt-4">
+          <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
 
-        <form onSubmit={handleConfirmSubmit} className="mt-5 space-y-6">
-          {/* Weight row */}
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-semibold text-zinc-400">
-              Weight ({unit})
-            </span>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => adjustVal(weight, setWeight, -5)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white active:scale-95"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <input
-                type="number"
-                step="any"
-                placeholder="0"
-                value={weight}
-                onChange={(e) =>
-                  setWeight(e.target.value === "" ? "" : Number(e.target.value))
-                }
-                className="w-20 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-center font-bold text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => adjustVal(weight, setWeight, 5)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
+            <div>
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                {setType === "warmup" ? "Edit Warm-up Set" : `Edit Set `}
+              </h3>
 
-          {/* Reps row */}
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-semibold text-zinc-400">Reps</span>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => adjustVal(reps, setReps, -1)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white active:scale-95"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <input
-                type="number"
-                placeholder="0"
-                value={reps}
-                onChange={(e) =>
-                  setReps(e.target.value === "" ? "" : Number(e.target.value))
-                }
-                className="w-20 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-center font-bold text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => adjustVal(reps, setReps, 1)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Update weight, reps, or mark as warm-up.
+              </p>
             </div>
-          </div>
-
-          {/* RPE row */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-zinc-400">
-                RPE (1-10)
-              </span>
-              <span className="text-[10px] text-zinc-500">
-                Rate of perceived exertion
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => adjustVal(rpe, setRpe, -0.5, 1)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white active:scale-95"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <input
-                type="number"
-                step="0.5"
-                placeholder="—"
-                value={rpe}
-                onChange={(e) =>
-                  setRpe(e.target.value === "" ? "" : Number(e.target.value))
-                }
-                className="w-20 rounded-lg border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-center font-bold text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => adjustVal(rpe, setRpe, 0.5, 1)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white active:scale-95"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Set Type toggle */}
-          <div className="flex items-center justify-between border-t border-zinc-900 pt-4">
-            <span className="text-sm font-semibold text-zinc-400">
-              Warm-up set
-            </span>
             <button
               type="button"
-              onClick={() =>
-                setSetType((prev) => (prev === "warmup" ? "working" : "warmup"))
-              }
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                setType === "warmup" ? "bg-teal-600" : "bg-zinc-800"
-              }`}
+              onClick={onClose}
+              aria-label="Close edit set"
+              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  setType === "warmup" ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
+              <X className="size-5" />
             </button>
           </div>
+        </div>
 
-          {/* Save Button */}
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center rounded-xl bg-teal-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-teal-500"
-          >
-            Confirm Set
-          </button>
+        <form
+          onSubmit={handleConfirmSubmit}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
+            {/* Weight */}
+            <div className="rounded-xl border border-border bg-surface/80 p-3.5">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Weight</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Measured in {unit}
+                  </p>
+                </div>
+                {set.previousWeight != null && (
+                  <span className="mt-0.5 shrink-0 text-xs text-muted-foreground/60">
+                    Last: {set.previousWeight} {unit}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => adjustVal(weight, setWeight, -5)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <Minus className="size-4" />
+                </button>
+
+                <div className="flex items-center justify-center gap-2">
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="0"
+                    value={weight}
+                    onChange={(e) =>
+                      setWeight(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
+                    className="h-11 w-24 rounded-xl border border-border bg-card px-3 text-center text-xl font-semibold tabular-nums tracking-tight text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+
+                  <span className="text-sm font-semibold text-muted-foreground">
+                    {unit}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => adjustVal(weight, setWeight, 5)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Reps */}
+            <div className="rounded-xl border border-border bg-surface/80 p-3.5">
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Reps</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Number of repetitions completed
+                  </p>
+                </div>
+                {set.previousReps != null && (
+                  <span className="mt-0.5 shrink-0 text-xs text-muted-foreground/60">
+                    Last: {set.previousReps} reps
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-[2.5rem_1fr_2.5rem] items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => adjustVal(reps, setReps, -1)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <Minus className="size-4" />
+                </button>
+
+                <div className="flex items-center justify-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={reps}
+                    onChange={(e) =>
+                      setReps(
+                        e.target.value === "" ? "" : Number(e.target.value),
+                      )
+                    }
+                    className="h-11 w-24 rounded-xl border border-border bg-card px-3 text-center text-xl font-semibold tabular-nums tracking-tight text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+
+                  <span className="text-sm font-semibold text-muted-foreground">
+                    reps
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => adjustVal(reps, setReps, 1)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:border-primary/50 hover:bg-primary/10 hover:text-primary active:scale-95 focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Warm-up Toggle */}
+            <div className="rounded-xl border border-border bg-surface/80 p-3.5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Warm-up set
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Excluded from volume and PRs.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSetType((prev) =>
+                      prev === "warmup" ? "working" : "warmup",
+                    )
+                  }
+                  aria-pressed={setType === "warmup"}
+                  className={cn(
+                    "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-ring",
+                    setType === "warmup"
+                      ? "border-primary bg-primary"
+                      : "border-border bg-muted",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block size-6 translate-y-px rounded-full bg-foreground shadow transition-transform",
+                      setType === "warmup"
+                        ? "translate-x-5"
+                        : "translate-x-0.5",
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-0 border-border bg-card px-5 py-4">
+            <ProductButton fullWidth type="submit">
+              Save Set
+            </ProductButton>
+          </div>
         </form>
       </div>
     </dialog>

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { ProductButton } from "@/components/ui/ProductButton";
 
@@ -20,6 +21,12 @@ export function FinishWorkoutSheet({
   onClose,
   onFinish,
 }: FinishWorkoutSheetProps) {
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) setNotes("");
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -41,10 +48,6 @@ export function FinishWorkoutSheet({
           </button>
         </div>
 
-        <p className="mt-4 text-sm text-muted-foreground">
-          Are you sure you want to finish this workout?
-        </p>
-
         <div className="mt-5 space-y-3 rounded-xl border border-border bg-surface p-4">
           <SummaryRow label="Duration" value={`${elapsedMinutes} min`} />
           <SummaryRow label="Exercises" value={String(exercises)} />
@@ -52,7 +55,24 @@ export function FinishWorkoutSheet({
           <SummaryRow label="Total Volume" value={volume} />
         </div>
 
-        <ProductButton fullWidth className="mt-5" onClick={() => onFinish("")}>
+        <div className="mt-4">
+          <label
+            htmlFor="workout-notes"
+            className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          >
+            Workout Notes (optional)
+          </label>
+          <textarea
+            id="workout-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="How did the session feel?"
+            rows={3}
+            className="w-full resize-none rounded-xl border border-input bg-surface px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <ProductButton fullWidth className="mt-5" onClick={() => onFinish(notes)}>
           Finish Workout
         </ProductButton>
 

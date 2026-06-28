@@ -71,6 +71,17 @@ export const prefillSetsSchema = z.object({
   ),
 });
 
+export const updateSessionSettingsSchema = z.object({
+  type: z.literal('update_session_settings'),
+  unit: z.enum(['lbs', 'kg']),
+  defaultRestSeconds: z.number().int().min(0),
+});
+
+export const updateSessionNotesSchema = z.object({
+  type: z.literal('update_session_notes'),
+  notes: z.string(),
+});
+
 export const sessionMutationSchema = z.discriminatedUnion('type', [
   renameSessionSchema,
   addExerciseSchema,
@@ -79,6 +90,8 @@ export const sessionMutationSchema = z.discriminatedUnion('type', [
   updateSetSchema,
   deleteSetSchema,
   prefillSetsSchema,
+  updateSessionSettingsSchema,
+  updateSessionNotesSchema,
 ]);
 
 export type SessionMutationInput = z.infer<typeof sessionMutationSchema>;

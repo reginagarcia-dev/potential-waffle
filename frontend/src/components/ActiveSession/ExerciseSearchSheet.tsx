@@ -4,6 +4,7 @@ import { ChevronRight, Dumbbell, Plus, Search, X } from "lucide-react";
 import { apiFetch } from "../../lib/api.js";
 import { cn } from "../../lib/utils";
 import { ExerciseDefinition, MuscleGroup } from "shared";
+import { ProductButton } from "@/components/ui/ProductButton";
 
 interface ExerciseSearchSheetProps {
   isOpen: boolean;
@@ -145,7 +146,7 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
   };
 
   const handleSelect = (id: string) => {
-    debugger;
+    // debugger;
     onSelectExercise(id);
     onClose();
   };
@@ -344,21 +345,9 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
                 Back
               </button>
 
-              <button
-                type="submit"
-                disabled={createExerciseMutation.isPending}
-                className={cn(
-                  "inline-flex h-12 items-center justify-center rounded-xl bg-primary",
-                  "text-sm font-semibold text-primary-foreground transition",
-                  "hover:bg-primary-hover active:bg-primary-pressed",
-                  "disabled:pointer-events-none disabled:opacity-50",
-                  "focus:outline-none focus:ring-2 focus:ring-ring",
-                )}
-              >
-                {createExerciseMutation.isPending
-                  ? "Creating..."
-                  : "Create & Add"}
-              </button>
+              <ProductButton type="submit" fullWidth disabled={createExerciseMutation.isPending}>
+                {createExerciseMutation.isPending ? "Creating..." : "Create & Add"}
+              </ProductButton>
             </div>
           </form>
         )}

@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppShell } from "@/components/Layout/AppShell";
 import { AuthGuard } from "./components/Auth/AuthGuard";
 import { AuthProvider } from "./context/AuthContext";
-import { TodayPage } from "@/pages/TodayPage";
+import { TodayPage } from "@/pages/Today/TodayPage";
 import { ActiveSessionPage } from "@/pages/Session/ActiveSessionPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 

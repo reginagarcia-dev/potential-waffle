@@ -1,86 +1,115 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 interface RestTimerContextType {
   timeRemaining: number;
   duration: number;
-  isActive: boolean;
-  nextInfo: string | null;
-  startTimer: (seconds: number, info?: string) => void;
-  add30Seconds: () => void;
-  skip: () => void;
+  isRunning: boolean;
+  nextLabel: string | null;
+  startTimer: (seconds: number, label?: string) => void;
+  addThirtySeconds: () => void;
+  skipTimer: () => void;
 }
 
-const RestTimerContext = createContext<RestTimerContextType | undefined>(undefined);
+const RestTimerContext = createContext<RestTimerContextType | undefined>(
+  undefined,
+);
 
-export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
-  const [isActive, setIsActive] = useState<boolean>(false);
-  const [nextInfo, setNextInfo] = useState<string | null>(null);
-  
-  const timerRef = useRef<any>(null);
+export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [duration, setDuration] = useState(0);
+  const [endsAt, setEndsAt] = useState<number | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [nextLabel, setNextLabel] = useState<string | null>(null);
+
+  const isRunning = endsAt !== null && timeRemaining > 0;
 
   useEffect(() => {
-    if (isActive && timeRemaining > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            setIsActive(false);
-            triggerCompletionFeedback();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+    if (!endsAt) {
+      setTimeRemaining(0);
+      return;
     }
 
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+    const updateRemaining = () => {
+      const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        setEndsAt(null);
+        setNextLabel(null);
+
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate([200, 100, 200]);
+        }
       }
     };
-  }, [isActive, timeRemaining]);
 
-  const triggerCompletionFeedback = () => {
-    // Vibrate device if supported
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate([200, 100, 200]);
+    updateRemaining();
+
+    const intervalId = window.setInterval(updateRemaining, 250);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [endsAt]);
+
+  const startTimer = (seconds: number, label?: string) => {
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+
+    if (safeSeconds <= 0) {
+      setDuration(0);
+      setEndsAt(null);
+      setTimeRemaining(0);
+      setNextLabel(null);
+      return;
     }
+
+    setDuration(safeSeconds);
+    setTimeRemaining(safeSeconds);
+    setEndsAt(Date.now() + safeSeconds * 1000);
+    setNextLabel(label ?? null);
   };
 
-  const startTimer = (seconds: number, info?: string) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    setDuration(seconds);
-    setTimeRemaining(seconds);
-    setIsActive(true);
-    setNextInfo(info || null);
+  const addThirtySeconds = () => {
+    setDuration((current) => current + 30);
+
+    setEndsAt((currentEndsAt) => {
+      if (!currentEndsAt) {
+        return Date.now() + 30_000;
+      }
+
+      return currentEndsAt + 30_000;
+    });
   };
 
-  const add30Seconds = () => {
-    if (isActive) {
-      setTimeRemaining((prev) => prev + 30);
-      setDuration((prev) => prev + 30);
-    }
-  };
-
-  const skip = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+  const skipTimer = () => {
+    setEndsAt(null);
     setTimeRemaining(0);
-    setIsActive(false);
-    setNextInfo(null);
+    setNextLabel(null);
   };
+
+  const value = useMemo(
+    () => ({
+      timeRemaining,
+      duration,
+      isRunning,
+      nextLabel,
+      startTimer,
+      addThirtySeconds,
+      skipTimer,
+    }),
+    [timeRemaining, duration, isRunning, nextLabel],
+  );
 
   return (
-    <RestTimerContext.Provider value={{ timeRemaining, duration, isActive, nextInfo, startTimer, add30Seconds, skip }}>
+    <RestTimerContext.Provider value={value}>
       {children}
     </RestTimerContext.Provider>
   );
@@ -88,8 +117,10 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useRestTimer = () => {
   const context = useContext(RestTimerContext);
-  if (context === undefined) {
-    throw new Error('useRestTimer must be used within a RestTimerProvider');
+
+  if (!context) {
+    throw new Error("useRestTimer must be used within a RestTimerProvider");
   }
+
   return context;
 };

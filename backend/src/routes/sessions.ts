@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { eq, and, desc, asc, max, not } from 'drizzle-orm';
+import { eq, and, desc, asc, max, not, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { workoutSessions, sessionExercises, sets, exerciseDefinitions } from '../db/schema.js';
+import { workoutSessions, sessionExercises, sets, exerciseDefinitions, users } from '../db/schema.js';
 import { sessionMutationSchema } from 'shared';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.js';
 import { convertWeight } from 'shared';
@@ -349,19 +349,19 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
             .where(eq(sets.exerciseId, lastPerformance[0].sessionExerciseId))
             .orderBy(asc(sets.setNumber));
 
-          // Insert prefilled sets (all pending, weight/reps prepopulated but flagged with reference fields)
+          // Mirror the set structure (count + types) from last session.
+          // Leave weight/reps blank so the user actively logs this session's numbers.
+          // Store the previous values as reference — shown as hints in the UI.
           if (prevSets.length > 0) {
             for (const prev of prevSets) {
-              const weightVal = convertWeight(prev.weight ?? 0, session.unit, session.unit); // Normalize unit if session unit changed
               await db.insert(sets).values({
                 exerciseId: sessionEx.id,
                 setNumber: prev.setNumber,
                 type: prev.type,
                 status: 'pending',
-                weight: prev.weight, // Prepopulate input
-                weightKg: prev.weightKg,
-                reps: prev.reps, // Prepopulate input
-                rpe: prev.rpe,
+                weight: null,
+                weightKg: null,
+                reps: null,
                 previousWeight: prev.weight,
                 previousReps: prev.reps,
               });
@@ -479,6 +479,30 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
           const maxWeightKg = maxWeightResult[0]?.maxWeightKg ?? 0;
           if (finalWeightKg > maxWeightKg) {
             updateData.isPr = true;
+
+            // Clear isPr on any previous sets for this exercise that are now superseded
+            const oldPrSets = await db
+              .select({ id: sets.id })
+              .from(sets)
+              .innerJoin(sessionExercises, eq(sets.exerciseId, sessionExercises.id))
+              .innerJoin(workoutSessions, eq(sessionExercises.sessionId, workoutSessions.id))
+              .where(
+                and(
+                  eq(sessionExercises.exerciseDefinitionId, exerciseDefinitionId),
+                  eq(workoutSessions.userId, userId),
+                  eq(sets.type, 'working'),
+                  eq(sets.status, 'completed'),
+                  eq(sets.isPr, true),
+                  not(eq(sets.id, setId))
+                )
+              );
+
+            if (oldPrSets.length > 0) {
+              await db
+                .update(sets)
+                .set({ isPr: false })
+                .where(inArray(sets.id, oldPrSets.map((s) => s.id)));
+            }
           } else {
             updateData.isPr = false;
           }
@@ -541,6 +565,27 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
             rpe: s.rpe || null,
           });
         }
+        break;
+      }
+
+      case 'update_session_settings': {
+        await db
+          .update(workoutSessions)
+          .set({ unit: mutation.unit })
+          .where(eq(workoutSessions.id, sessionId));
+
+        await db
+          .update(users)
+          .set({ defaultRestSeconds: mutation.defaultRestSeconds, preferredUnit: mutation.unit })
+          .where(eq(users.id, userId));
+        break;
+      }
+
+      case 'update_session_notes': {
+        await db
+          .update(workoutSessions)
+          .set({ notes: mutation.notes.trim() || null })
+          .where(eq(workoutSessions.id, sessionId));
         break;
       }
     }

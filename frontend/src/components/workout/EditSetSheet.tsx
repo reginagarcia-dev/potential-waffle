@@ -97,7 +97,7 @@ export function EditSetSheet({
           </label>
 
           <ProductButton fullWidth onClick={onConfirm}>
-            Confirm Set
+            Confirm Set*
           </ProductButton>
         </div>
       </div>

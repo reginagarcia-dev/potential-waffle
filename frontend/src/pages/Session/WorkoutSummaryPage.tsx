@@ -1,220 +1,334 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
-import { Award, Clock, Dumbbell, Calendar, Flame } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { WorkoutSessionResponse } from "shared";
+import { PRBadge } from "@/components/workout/PRBadge";
+import { ProductButton } from "@/components/ui/ProductButton";
 
 export const WorkoutSummaryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [expandedExerciseIds, setExpandedExerciseIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const { data: session, isLoading } = useQuery<WorkoutSessionResponse>({
     queryKey: ["sessionSummary", id],
     queryFn: () => apiFetch(`/sessions/${id}`),
   });
 
+  const toggleExerciseExpanded = (exerciseId: string) => {
+    setExpandedExerciseIds((current) => {
+      const next = new Set(current);
+
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+      }
+
+      return next;
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className="flex h-[70vh] items-center justify-center text-brand">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand border-t-transparent"></div>
+      <div className="flex h-[70vh] items-center justify-center text-primary">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="ui-card text-center">
-        <h3 className="font-display text-title font-semibold text-danger">
-          Workout not found
-        </h3>
-        <button onClick={() => navigate("/")} className="btn-ghost mt-4">
-          Go Back Home
-        </button>
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 text-center text-foreground">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h3 className="text-lg font-semibold text-danger">
+            Workout not found
+          </h3>
+
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-4 inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            Go Back Home
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Calculate stats
-  const durationMin =
+  const durationSeconds =
     session.completedAt && session.startedAt
       ? Math.max(
-          1,
-          Math.round(
+          0,
+          Math.floor(
             (new Date(session.completedAt).getTime() -
               new Date(session.startedAt).getTime()) /
-              60000,
+              1000,
           ),
         )
       : 0;
 
-  const setsCount = session.exercises.reduce(
-    (acc, ex) => acc + ex.sets.length,
-    0,
-  );
+  const formatDuration = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds
+        .toString()
+        .padStart(2, "0")}`;
+    }
+
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const setsCount = session.exercises.reduce((acc, ex) => {
+    return acc + ex.sets.filter((set) => set.status === "completed").length;
+  }, 0);
 
   const totalVolume = session.exercises.reduce((acc, ex) => {
     return (
       acc +
-      ex.sets.reduce((sum, s) => {
+      ex.sets.reduce((sum, set) => {
         if (
-          s.status === "completed" &&
-          s.type === "working" &&
-          s.weight &&
-          s.reps
+          set.status === "completed" &&
+          set.type === "working" &&
+          set.weight &&
+          set.reps
         ) {
-          return sum + s.weight * s.reps;
+          return sum + set.weight * set.reps;
         }
+
         return sum;
       }, 0)
     );
   }, 0);
 
-  // Extract PRs
-  const prList: Array<{ name: string; weight: number; reps: number }> = [];
+  const prList: Array<{
+    name: string;
+    weight: number;
+    reps: number;
+    estimatedOneRepMax: number;
+  }> = [];
+
   session.exercises.forEach((ex) => {
-    ex.sets.forEach((s) => {
-      if (s.isPr && s.weight && s.reps) {
-        prList.push({ name: ex.nameSnapshot, weight: s.weight, reps: s.reps });
+    ex.sets.forEach((set) => {
+      if (set.isPr && set.weight && set.reps) {
+        const estimatedOneRepMax = Math.round(set.weight * (1 + set.reps / 30));
+
+        prList.push({
+          name: ex.nameSnapshot,
+          weight: set.weight,
+          reps: set.reps,
+          estimatedOneRepMax,
+        });
       }
     });
   });
 
   return (
-    <div className="app-screen !min-h-0 !px-0 !pt-0 !pb-12 space-y-6">
-      {/* Title Header */}
-      <div className="ui-card space-y-2 py-6 text-center">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-weak text-brand ring-4 ring-brand/10">
-          <Flame className="h-6 w-6 fill-brand/20" />
-        </div>
-        <h1 className="font-display text-h1 font-bold tracking-tight text-fg">
-          Workout Complete! 🎉
-        </h1>
-        <p className="text-body-sm font-semibold uppercase tracking-wider text-fg-secondary">
-          {session.name}
-        </p>
-      </div>
+    <div className="flex min-h-dvh flex-col bg-background px-4 py-5 pb-24 text-foreground">
+      {/* Header */}
+      <header className="flex items-center gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">
+            Workout Complete 🎉
+          </h1>
 
-      {/* Summary Cards Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="ui-card-tight text-center">
-          <Clock className="mx-auto h-5 w-5 text-fg-dim" />
-          <span className="mt-2 block text-caption font-semibold uppercase tracking-wider text-fg-dim">
+          <p className="mt-1 truncate text-sm text-muted-foreground">
+            {session.name}
+          </p>
+        </div>
+      </header>
+
+      {/* Metrics Strip */}
+      <section className="mt-4 grid grid-cols-4 overflow-hidden rounded-xl border border-border bg-card shadow-card">
+        <div className="border-r border-border px-2 py-3 text-center">
+          <p className="text-base font-semibold tabular-nums text-foreground">
+            {formatDuration(durationSeconds)}
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-muted-foreground">
             Duration
-          </span>
-          <span className="mt-0.5 block font-display text-title font-semibold text-fg">
-            {durationMin} min
-          </span>
+          </p>
         </div>
 
-        <div className="ui-card-tight text-center">
-          <Dumbbell className="mx-auto h-5 w-5 text-fg-dim" />
-          <span className="mt-2 block text-caption font-semibold uppercase tracking-wider text-fg-dim">
-            Exercises
-          </span>
-          <span className="mt-0.5 block font-display text-title font-semibold text-fg">
+        <div className="border-r border-border px-2 py-3 text-center">
+          <p className="text-base font-semibold tabular-nums text-foreground">
             {session.exercises.length}
-          </span>
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+            Exercises
+          </p>
         </div>
 
-        <div className="ui-card-tight text-center">
-          <Calendar className="mx-auto h-5 w-5 text-fg-dim" />
-          <span className="mt-2 block text-caption font-semibold uppercase tracking-wider text-fg-dim">
-            Sets Logged
-          </span>
-          <span className="mt-0.5 block font-display text-title font-semibold text-fg">
+        <div className="border-r border-border px-2 py-3 text-center">
+          <p className="text-base font-semibold tabular-nums text-foreground">
             {setsCount}
-          </span>
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+            Sets
+          </p>
         </div>
 
-        <div className="ui-card-tight text-center">
-          <Award className="mx-auto h-5 w-5 text-fg-dim" />
-          <span className="mt-2 block text-caption font-semibold uppercase tracking-wider text-fg-dim">
-            Volume ({session.unit})
-          </span>
-          <span className="mt-0.5 block font-display text-title font-semibold text-brand">
+        <div className="px-2 py-3 text-center">
+          <p className="text-base font-semibold tabular-nums text-foreground">
             {totalVolume.toLocaleString()}
-          </span>
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+            Volume
+          </p>
         </div>
-      </div>
+      </section>
 
-      {/* PR accomplishments */}
+      {/* PRs */}
       {prList.length > 0 && (
-        <div className="ui-card space-y-2.5 border-warning/40 bg-warning/10">
-          <h3 className="inline-flex items-center gap-1.5 font-display text-label font-semibold uppercase tracking-wider text-warning">
-            <Award className="h-4 w-4 fill-warning/10" />
-            Personal Records Set
-          </h3>
-          <div className="space-y-1">
+        <section className="mt-5">
+          <h2 className="mb-2 text-sm font-semibold text-foreground">PRs</h2>
+
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
             {prList.map((pr, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between text-body font-semibold text-fg"
+                className="flex items-center justify-between gap-3 border-b border-border px-3 py-3 last:border-b-0"
               >
-                <span className="text-fg-secondary">{pr.name}</span>
-                <span className="text-warning">
-                  {pr.weight} {session.unit} × {pr.reps} reps
-                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {pr.name}
+                  </p>
+
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
+                    {pr.weight} × {pr.reps}
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Estimated 1RM
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                    {pr.estimatedOneRepMax} {session.unit}
+                  </span>
+
+                  <PRBadge />
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Exercise Detail Review */}
-      <div className="space-y-3">
-        <h3 className="font-display text-label font-semibold uppercase tracking-wider text-fg-secondary">
-          Exercise Summary
-        </h3>
+      {/* Exercises */}
+      <section className="mt-5">
+        <h2 className="mb-2 text-sm font-semibold text-foreground">
+          Exercises
+        </h2>
 
         <div className="space-y-2">
-          {session.exercises.map((ex) => (
-            <div key={ex.id} className="ui-card-tight flex flex-col gap-2">
-              <span className="text-body font-semibold text-fg">
-                {ex.nameSnapshot}
-              </span>
+          {session.exercises.map((ex) => {
+            const isExpanded = expandedExerciseIds.has(ex.id);
 
-              <div className="flex flex-wrap gap-1.5">
-                {ex.sets.map((set, sIdx) => (
-                  <span
-                    key={set.id}
-                    className={`inline-flex items-center gap-1 rounded-sm px-2 py-1 text-caption font-semibold ${
-                      set.type === "warmup"
-                        ? "bg-surface text-fg-dim"
-                        : "bg-surface-2/70 text-fg-secondary"
+            const completedWorkingSets = ex.sets.filter(
+              (set) => set.status === "completed" && set.type === "working",
+            );
+
+            const setSummary = completedWorkingSets
+              .map((set) => `${set.weight} × ${set.reps}`)
+              .join(", ");
+
+            return (
+              <div
+                key={ex.id}
+                className="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleExerciseExpanded(ex.id)}
+                  className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {ex.nameSnapshot}
+                    </p>
+
+                    <p className="mt-0.5 truncate text-sm tabular-nums text-muted-foreground">
+                      {setSummary || "No completed working sets"}
+                    </p>
+                  </div>
+
+                  <ChevronDown
+                    className={`size-5 shrink-0 text-muted-foreground transition-transform ${
+                      isExpanded ? "rotate-180" : ""
                     }`}
-                  >
-                    {set.type === "warmup" ? "W" : sIdx + 1}
-                    {": "}
-                    {set.weight}×{set.reps}
-                    {set.isPr && (
-                      <span className="font-black text-warning">★</span>
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+                  />
+                </button>
 
-      {/* Workout Notes */}
-      {session.notes && (
-        <div className="ui-card-tight space-y-2">
-          <span className="block text-caption font-semibold uppercase tracking-wider text-fg-dim">
-            Notes
-          </span>
-          <p className="text-body text-fg-secondary italic">
-            "{session.notes}"
-          </p>
+                {isExpanded && (
+                  <div className="border-t border-border bg-surface/40 px-3 py-3">
+                    <div className="space-y-2">
+                      {ex.sets.map((set, index) => (
+                        <div
+                          key={set.id}
+                          className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span
+                              className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                set.type === "warmup"
+                                  ? "bg-muted text-muted-foreground"
+                                  : "bg-primary/10 text-primary"
+                              }`}
+                            >
+                              {set.type === "warmup" ? "W" : index + 1}
+                            </span>
+
+                            <span className="truncate text-sm font-semibold tabular-nums text-foreground">
+                              {set.weight ?? "—"} {session.unit} ×{" "}
+                              {set.reps ?? "—"}
+                            </span>
+                          </div>
+
+                          <div className="flex shrink-0 items-center gap-2">
+                            {set.isPr && <PRBadge />}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
+      </section>
+
+      {/* Notes */}
+      {session.notes && (
+        <section className="mt-5 rounded-xl border border-border bg-card p-3 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Notes
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-muted-foreground italic">
+            “{session.notes}”
+          </p>
+        </section>
       )}
 
-      {/* Action CTA */}
-      <button onClick={() => navigate("/")} className="btn-primary-wide">
-        Done
-      </button>
+      {/* Done CTA */}
+      <div className="sticky bottom-4 mt-auto pt-6">
+        <ProductButton fullWidth onClick={() => navigate("/")}>
+          Done
+        </ProductButton>
+      </div>
     </div>
   );
 };
+
 export default WorkoutSummaryPage;

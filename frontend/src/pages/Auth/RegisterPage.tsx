@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.js';
 import { Dumbbell } from 'lucide-react';
+import { ProductButton } from '@/components/ui/ProductButton';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -18,20 +19,16 @@ export const RegisterPage: React.FC = () => {
       setError('Please fill in all fields');
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
     setError(null);
     setSubmitting(true);
-
     try {
       await register(email, password);
       navigate('/');
@@ -43,30 +40,30 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-8 backdrop-blur-xl">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8">
         <div className="flex flex-col items-center justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-500/10 text-teal-400 ring-1 ring-teal-500/30">
-            <Dumbbell className="h-6 w-6" />
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/30">
+            <Dumbbell className="size-6" />
           </div>
-          <h2 className="mt-6 text-center font-heading text-3xl font-extrabold tracking-tight text-white">
+          <h2 className="mt-6 text-center text-3xl font-semibold tracking-tight text-foreground">
             Create an account
           </h2>
-          <p className="mt-2 text-center text-sm text-zinc-400">
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             Start tracking your workout metrics today
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400 ring-1 ring-red-500/20">
+            <div className="rounded-lg bg-danger/10 p-3 text-sm text-danger ring-1 ring-danger/20">
               {error}
             </div>
           )}
 
-          <div className="space-y-4 rounded-md shadow-sm">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="text-xs font-semibold text-zinc-400">
+              <label htmlFor="email-address" className="block text-xs font-semibold text-muted-foreground">
                 Email Address
               </label>
               <input
@@ -77,13 +74,13 @@ export const RegisterPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2.5 text-white placeholder-zinc-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                className="mt-1 block h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="text-xs font-semibold text-zinc-400">
+              <label htmlFor="password" className="block text-xs font-semibold text-muted-foreground">
                 Password (min 6 characters)
               </label>
               <input
@@ -94,13 +91,13 @@ export const RegisterPage: React.FC = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2.5 text-white placeholder-zinc-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                className="mt-1 block h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="••••••••"
               />
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="text-xs font-semibold text-zinc-400">
+              <label htmlFor="confirm-password" className="block text-xs font-semibold text-muted-foreground">
                 Confirm Password
               </label>
               <input
@@ -111,30 +108,24 @@ export const RegisterPage: React.FC = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-2.5 text-white placeholder-zinc-500 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm"
+                className="mt-1 block h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="••••••••"
               />
             </div>
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="group relative flex w-full justify-center rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:opacity-50"
-            >
-              {submitting ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-white"></div>
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </div>
+          <ProductButton type="submit" fullWidth disabled={submitting}>
+            {submitting ? (
+              <div className="size-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+            ) : (
+              'Create Account'
+            )}
+          </ProductButton>
         </form>
 
         <div className="text-center text-sm">
-          <span className="text-zinc-500">Already have an account? </span>
-          <Link to="/login" className="font-semibold text-teal-400 hover:text-teal-300">
+          <span className="text-muted-foreground">Already have an account? </span>
+          <Link to="/login" className="font-semibold text-primary hover:text-primary/80">
             Sign in
           </Link>
         </div>

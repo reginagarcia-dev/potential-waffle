@@ -15,7 +15,7 @@ export function ExerciseCard({
   children,
 }: ExerciseCardProps) {
   return (
-    <section className="rounded-xl border border-border bg-card p-4">
+    <section className="rounded-2xl border border-border/80 bg-card p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-foreground">{name}</h3>

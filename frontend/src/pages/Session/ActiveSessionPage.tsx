@@ -9,32 +9,30 @@ import {
   ArrowLeft,
   Ban,
   FileText,
-  MoreHorizontal,
   Pencil,
   Plus,
   Settings,
   Trash2,
 } from "lucide-react";
+import RenameWorkoutSheet from "@/components/ActiveSession/RenameWorkoutSheet";
+import WorkoutSettingsSheet from "@/components/ActiveSession/WorkoutSettingsSheet";
+import WorkoutNoteSheet from "@/components/ActiveSession/WorkoutNoteSheet";
+import DiscardWorkoutSheet from "@/components/ActiveSession/DiscardWorkoutSheet";
 import { ProductButton } from "@/components/ui/ProductButton";
-import { ExerciseCard } from "@/components/workout/ExerciseCard";
-import { SetRow } from "@/components/workout/SetRow";
+import { ExerciseCard } from "@/components/ActiveSession/ExerciseCard";
 import { SetEditSheet } from "@/components/ActiveSession/SetEditSheet.js";
-import { RestTimerBar } from "../../components/workout/RestTimerBar.js";
-import { EditSetSheet } from "../../components/workout/EditSetSheet.js";
-import { ExerciseSearchSheet as test } from "../../components/workout/ExerciseSearchSheet.js";
+import RestTimerBar from "@/components/ActiveSession/RestTimerBar";
 import { ExerciseSearchSheet } from "../../components/ActiveSession/ExerciseSearchSheet.js";
 import { FinishWorkoutSheet } from "../../components/workout/FinishWorkoutSheet.js";
 import { EllipsisMenu } from "@/components/ui/EllipsisMenu.js";
-
+import { SessionTimer } from "@/components/ActiveSession/SessionTimer";
 export function ActiveSessionPage() {
-  const [isEditSetOpen, setIsEditSetOpen] = useState(false);
   const [isExerciseSearchOpen, setIsExerciseSearchOpen] = useState(false);
   const [isFinishOpen, setIsFinishOpen] = useState(false);
-
-  const [weight, setWeight] = useState(140);
-  const [reps, setReps] = useState(7);
-  const [rpe, setRpe] = useState(9);
-  const [isWarmup, setIsWarmup] = useState(false);
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -43,7 +41,6 @@ export function ActiveSessionPage() {
   const { startTimer } = useRestTimer();
 
   // Dialog Overlays states
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   const [showOptions, setShowOptions] = useState(false);
@@ -54,11 +51,7 @@ export function ActiveSessionPage() {
   const [activeSet, setActiveSet] = useState<WorkoutSetResponse | null>(null);
 
   // 1. Fetch active session query
-  const {
-    data: session,
-    isLoading,
-    error,
-  } = useQuery<WorkoutSessionResponse>({
+  const { data: session } = useQuery<WorkoutSessionResponse>({
     queryKey: ["activeSession"],
     queryFn: () => apiFetch(`/sessions/${id}`),
     // Re-verify the session status, if it's completed, redirect to summary
@@ -72,39 +65,6 @@ export function ActiveSessionPage() {
     }
   }, [session, navigate]);
 
-  // 2. Active Session Duration Timer (counts up in seconds)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
-  useEffect(() => {
-    if (!session || session.status !== "active") return;
-
-    const startedTime = new Date(session.startedAt).getTime();
-
-    const updateTimer = () => {
-      const current = new Date().getTime();
-      setElapsedSeconds(
-        Math.max(0, Math.floor((current - startedTime) / 1000)),
-      );
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [session]);
-
-  const formatElapsed = (totalSecs: number) => {
-    const h = Math.floor(totalSecs / 3600);
-    const m = Math.floor((totalSecs % 3600) / 60);
-    const s = totalSecs % 60;
-
-    const mStr = m.toString().padStart(2, "0");
-    const sStr = s.toString().padStart(2, "0");
-
-    if (h > 0) {
-      return `${h}:${mStr}:${sStr}`;
-    }
-    return `${mStr}:${sStr}`;
-  };
   // 3. Consolidated Mutation Endpoint
   const mutation = useMutation({
     mutationFn: (payload: any) =>
@@ -163,6 +123,18 @@ export function ActiveSessionPage() {
     });
   };
 
+  const handleUpdateSetValue = (
+    set: WorkoutSetResponse,
+    field: "weight" | "reps",
+    value: number | null,
+  ) => {
+    mutation.mutate({
+      type: "update_set",
+      setId: set.id,
+      [field]: value,
+    });
+  };
+
   const handleToggleSetStatus = (set: WorkoutSetResponse) => {
     const nextStatus = set.status === "completed" ? "pending" : "completed";
 
@@ -202,8 +174,6 @@ export function ActiveSessionPage() {
       startTimer(restTime, nextSetMsg);
     }
   };
-
-  console.log(session?.exercises);
   // 4. Finish Session Mutation
   const finishSessionMutation = useMutation({
     mutationFn: (notes: string) =>
@@ -240,7 +210,7 @@ export function ActiveSessionPage() {
   };
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-40">
+      <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-56">
         <header className="flex items-center justify-between">
           <button
             onClick={() => navigate("/")}
@@ -256,26 +226,24 @@ export function ActiveSessionPage() {
                   type="text"
                   value={tempWorkoutName}
                   onChange={(e) => setTempWorkoutName(e.target.value)}
-                  className="field h-9 px-2 py-1 text-body font-semibold"
+                  className="h-9 w-full rounded-md border border-border bg-surface px-2 text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <button
                   onClick={handleRenameSession}
-                  className="btn-primary h-9 px-3 text-caption"
+                  className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition hover:bg-primary-hover"
                 >
                   Save
                 </button>
               </div>
             ) : (
-              <h1 className="inline-flex items-center gap-1.5 font-display text-title font-semibold text-fg">
+              <h1 className="inline-flex items-center gap-1.5 text-lg font-semibold text-foreground">
                 {session?.name}
               </h1>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tabular-nums text-foreground">
-              {formatElapsed(elapsedSeconds)}
-            </span>
+            {session && <SessionTimer startedAt={session.startedAt} />}
 
             <div className="relative">
               <EllipsisMenu
@@ -284,23 +252,23 @@ export function ActiveSessionPage() {
                   {
                     label: "Rename Workout",
                     icon: <Pencil className="size-4" />,
-                    onClick: () => {},
+                    onClick: () => setIsRenameOpen(true),
                   },
                   {
                     label: "Workout Settings",
                     icon: <Settings className="size-4" />,
-                    onClick: () => {},
+                    onClick: () => setIsSettingsOpen(true),
                   },
                   {
                     label: "Add Workout Note",
                     icon: <FileText className="size-4" />,
-                    onClick: () => {},
+                    onClick: () => setIsNoteOpen(true),
                   },
                   {
                     label: "Discard Workout",
                     icon: <Trash2 className="size-4" />,
                     destructive: true,
-                    onClick: () => handleAbandon(),
+                    onClick: () => setIsDiscardOpen(true),
                   },
                 ]}
               />
@@ -308,15 +276,15 @@ export function ActiveSessionPage() {
           </div>
         </header>
         {showOptions && (
-          <div className="ui-card-tight absolute right-0 z-40 mt-1.5 w-44 p-1 shadow-float">
+          <div className="absolute right-0 z-40 mt-1.5 w-44 rounded-xl border border-border bg-card p-1 shadow-card">
             <button
               onClick={() => {
                 setShowOptions(false);
                 handleAbandon();
               }}
-              className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-label font-semibold text-danger transition hover:bg-surface"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-danger transition hover:bg-surface"
             >
-              <Ban className="h-3.5 w-3.5" />
+              <Ban className="size-4" />
               Discard Workout
             </button>
           </div>
@@ -335,99 +303,40 @@ export function ActiveSessionPage() {
             session?.exercises.map((ex) => (
               <ExerciseCard
                 key={ex.id}
-                name={ex.nameSnapshot}
-                // @ts-ignore
-                // exercise={ex}
-                // unit={session.unit}
-                // onAddSet={handleAddSet}
-                // onToggleSetStatus={handleToggleSetStatus}
-                // onDeleteSet={handleDeleteSet}
-                // onDeleteExercise={handleDeleteExercise}
-                // onTriggerSetEdit={handleTriggerSetEdit}
+                exercise={ex}
+                unit={session.unit}
+                onAddSet={handleAddSet}
+                onToggleSetStatus={handleToggleSetStatus}
+                onDeleteSet={handleDeleteSet}
+                onDeleteExercise={handleDeleteExercise}
+                onTriggerSetEdit={handleTriggerSetEdit}
+                onUpdateSetValue={handleUpdateSetValue}
               />
             ))
           ) : (
-            <div className="rounded-xl border border-dashed border-zinc-850 p-8 text-center bg-zinc-900/10">
-              <p className="text-sm text-zinc-400">
+            <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center">
+              <p className="text-sm text-muted-foreground">
                 Workout is empty. Add exercises to start logging!
               </p>
             </div>
           )}
         </div>
-        <ExerciseCard
-          name="Squat"
-          historyLabel="From Jun 21 · 135 x 8, 135 x 8, 135 x 7"
-        >
-          <SetRow
-            setNumber={1}
-            type="warmup"
-            status="completed"
-            previous="—"
-            weight="45"
-            reps="10"
-            rpe="—"
-            onClick={() => setIsEditSetOpen(true)}
-          />
-
-          <SetRow
-            setNumber={1}
-            status="completed"
-            previous="135 x 8"
-            weight="140"
-            reps="8"
-            rpe="8"
-            onClick={() => setIsEditSetOpen(true)}
-          />
-
-          <SetRow
-            setNumber={2}
-            status="completed"
-            previous="135 x 8"
-            weight="140"
-            reps="8"
-            rpe="8"
-            onClick={() => setIsEditSetOpen(true)}
-          />
-
-          <SetRow
-            setNumber={3}
-            status="pending"
-            previous="135 x 7"
-            weight="140"
-            reps="7"
-            rpe="9"
-            onClick={() => setIsEditSetOpen(true)}
-          />
-        </ExerciseCard>
-        {/* <ExerciseCard
-          nameSnapshot="Romanian Deadlift"
-          historyLabel="From Jun 19 · 95 x 10, 95 x 10, 95 x 9"
-        >
-          <SetRow
-            setNumber={1}
-            status="completed"
-            previous="95 x 10"
-            weight="100"
-            reps="10"
-            rpe="8"
-          />
-
-          <SetRow
-            setNumber={2}
-            status="pending"
-            previous="95 x 10"
-            weight="100"
-            reps="10"
-            rpe="8"
-          />
-        </ExerciseCard> */}
-        <ProductButton
+        {/* <ProductButton
           fullWidth
-          className="fixed inset-x-0 bottom-[5.25rem] z-30 mx-auto max-w-md px-4"
+          className="fixed inset-x-0 bottom-21 z-30 mx-auto max-w-md px-4"
           onClick={() => setIsFinishOpen(true)}
         >
           Finish Workout
-        </ProductButton>
+        </ProductButton> */}
+        <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4 pb-4">
+          <div className="space-y-3">
+            <RestTimerBar />
+
+            <ProductButton fullWidth onClick={() => setIsFinishOpen(true)}>
+              Finish Workout
+            </ProductButton>
+          </div>
+        </div>
       </div>
 
       {/* <RestTimerBar timeRemaining="01:42" nextLabel="Squat — Set 3" /> */}
@@ -450,8 +359,7 @@ export function ActiveSessionPage() {
       <SetEditSheet
         isOpen={isEditOpen}
         set={activeSet}
-        // @ts-ignore
-        unit={session?.unit}
+        unit={session?.unit ?? "lbs"}
         onClose={() => {
           setIsEditOpen(false);
           setActiveSet(null);
@@ -463,27 +371,94 @@ export function ActiveSessionPage() {
         onClose={() => setIsExerciseSearchOpen(false)}
         onSelectExercise={handleAddExercise}
       />
+      <RenameWorkoutSheet
+        isOpen={isRenameOpen}
+        currentName={session?.name ?? ""}
+        onClose={() => setIsRenameOpen(false)}
+        onSave={(name) => {
+          mutation.mutate({ type: "rename_session", name });
+          setIsRenameOpen(false);
+        }}
+        isPending={mutation.isPending}
+      />
 
+      <WorkoutSettingsSheet
+        isOpen={isSettingsOpen}
+        unit={session?.unit ?? "lbs"}
+        defaultRestSeconds={user?.defaultRestSeconds ?? 180}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={(settings) => {
+          mutation.mutate({
+            type: "update_session_settings",
+            unit: settings.unit,
+            defaultRestSeconds: settings.defaultRestSeconds,
+          });
+          setIsSettingsOpen(false);
+        }}
+        isPending={mutation.isPending}
+      />
+
+      <WorkoutNoteSheet
+        isOpen={isNoteOpen}
+        currentNote={session?.notes ?? ""}
+        onClose={() => setIsNoteOpen(false)}
+        onSave={(note) => {
+          mutation.mutate({
+            type: "update_session_notes",
+            notes: note,
+          });
+          setIsNoteOpen(false);
+        }}
+        isPending={mutation.isPending}
+      />
+
+      <DiscardWorkoutSheet
+        isOpen={isDiscardOpen}
+        workoutName={session?.name}
+        onClose={() => setIsDiscardOpen(false)}
+        onDiscard={() => {
+          setIsDiscardOpen(false);
+          abandonSessionMutation.mutate();
+        }}
+        isPending={abandonSessionMutation.isPending}
+      />
       <FinishWorkoutSheet
         isOpen={isFinishOpen}
-        elapsedMinutes={Math.floor(elapsedSeconds / 60)}
-        exercises={5}
-        sets={18}
-        volume="12,450 lbs"
+        elapsedMinutes={Math.floor(
+          (Date.now() - new Date(session?.startedAt ?? Date.now()).getTime()) / 60000
+        )}
+        exercises={session?.exercises.length ?? 0}
+        sets={
+          session?.exercises.reduce(
+            (acc, ex) =>
+              acc + ex.sets.filter((s) => s.status === "completed").length,
+            0,
+          ) ?? 0
+        }
+        volume={(() => {
+          const vol =
+            session?.exercises.reduce(
+              (acc, ex) =>
+                acc +
+                ex.sets.reduce((sum, s) => {
+                  if (
+                    s.status === "completed" &&
+                    s.type === "working" &&
+                    s.weight &&
+                    s.reps
+                  )
+                    return sum + s.weight * s.reps;
+                  return sum;
+                }, 0),
+              0,
+            ) ?? 0;
+          return `${vol.toLocaleString()} ${session?.unit ?? "lbs"}`;
+        })()}
         onClose={() => setIsFinishOpen(false)}
         onFinish={(notes) => {
           setIsFinishOpen(false);
           finishSessionMutation.mutate(notes);
         }}
-
-        // session={session}
-        // elapsedMinutes={Math.floor(elapsedSeconds / 60)}
-        // onClose={() => setIsFinishOpen(false)}
-        // onConfirm={(notes) => {
-        //   setIsFinishOpen(false);
-        //   finishSessionMutation.mutate(notes);
-        // }}
-        // isPending={finishSessionMutation.isPending}
       />
     </>
   );
