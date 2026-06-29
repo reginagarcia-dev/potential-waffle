@@ -93,11 +93,12 @@ test.describe('Workout Tracker E2E Flows', () => {
     // Navigate to homepage dashboard
     await page.goto('/');
 
-    // Verify authenticated user greeting is shown
-    await expect(page.locator('h1')).toContainText('trainer');
+    // Verify page title and user greeting are shown
+    await expect(page.locator('h1')).toContainText('Today');
+    await expect(page.getByText('Trainer', { exact: false }).first()).toBeVisible();
 
     // Verify Start Workout button is present
-    const startBtn = page.getByRole('button', { name: 'Start Workout' });
+    const startBtn = page.getByRole('button', { name: 'Start Workout' }).first();
     await expect(startBtn).toBeVisible();
 
     // Click Start Workout to configure a session
@@ -109,7 +110,7 @@ test.describe('Workout Tracker E2E Flows', () => {
     await expect(nameInput).toHaveValue(/.+/); // matches weekday workout
 
     // Start workout session
-    const launchBtn = page.getByRole('button', { name: 'Start Session' });
+    const launchBtn = page.getByRole('button', { name: 'Start Workout' }).last();
     await launchBtn.click();
 
     // Verify redirect to active session logger workspace

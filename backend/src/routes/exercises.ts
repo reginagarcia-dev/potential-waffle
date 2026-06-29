@@ -1,5 +1,5 @@
 import { Router, Response, NextFunction } from 'express';
-import { eq, or, and, ilike, desc, asc, isNull } from 'drizzle-orm';
+import { eq, or, and, ilike, desc, asc, isNull, not } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { exerciseDefinitions, sessionExercises, workoutSessions, sets } from '../db/schema.js';
 import { customExerciseSchema } from 'shared';
@@ -89,7 +89,85 @@ exercisesRouter.post('/', async (req: AuthenticatedRequest, res: Response, next:
   }
 });
 
-// 3. GET /exercises/:id/last-performance
+// 3. PATCH /exercises/:id (rename / recategorize a custom exercise)
+exercisesRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const exerciseId = req.params.id;
+    const userId = req.userId!;
+
+    const parseResult = customExerciseSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({ error: parseResult.error.errors[0].message });
+    }
+
+    const { name, muscleGroup } = parseResult.data;
+
+    // Only custom exercises owned by this user can be edited
+    const exercise = await db.query.exerciseDefinitions.findFirst({
+      where: and(
+        eq(exerciseDefinitions.id, exerciseId),
+        eq(exerciseDefinitions.createdBy, userId),
+        eq(exerciseDefinitions.isCustom, true)
+      ),
+    });
+
+    if (!exercise) {
+      return res.status(404).json({ error: 'Exercise not found or cannot be edited' });
+    }
+
+    // Reject if the new name conflicts with an existing exercise in this user's library
+    const duplicate = await db.query.exerciseDefinitions.findFirst({
+      where: and(
+        ilike(exerciseDefinitions.name, name.trim()),
+        or(isNull(exerciseDefinitions.createdBy), eq(exerciseDefinitions.createdBy, userId)),
+        not(eq(exerciseDefinitions.id, exerciseId))
+      ),
+    });
+
+    if (duplicate) {
+      return res.status(400).json({ error: 'An exercise with this name already exists in your library' });
+    }
+
+    const [updated] = await db
+      .update(exerciseDefinitions)
+      .set({ name: name.trim(), muscleGroup })
+      .where(eq(exerciseDefinitions.id, exerciseId))
+      .returning();
+
+    return res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 4. DELETE /exercises/:id (remove a custom exercise)
+exercisesRouter.delete('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const exerciseId = req.params.id;
+    const userId = req.userId!;
+
+    const [deleted] = await db
+      .delete(exerciseDefinitions)
+      .where(
+        and(
+          eq(exerciseDefinitions.id, exerciseId),
+          eq(exerciseDefinitions.createdBy, userId),
+          eq(exerciseDefinitions.isCustom, true)
+        )
+      )
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Exercise not found or cannot be deleted' });
+    }
+
+    return res.json({ message: 'Exercise deleted successfully', id: deleted.id });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 5. GET /exercises/:id/last-performance
 exercisesRouter.get('/:id/last-performance', async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const exerciseDefId = req.params.id;

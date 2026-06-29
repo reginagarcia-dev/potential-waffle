@@ -199,7 +199,26 @@ authRouter.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: 
   }
 });
 
-// 6. Update preferences
+// 6. Delete account
+authRouter.delete('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const [deleted] = await db
+      .delete(users)
+      .where(eq(users.id, req.userId!))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
+    return res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 7. Update preferences
 authRouter.patch('/preferences', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const parseResult = updatePreferencesSchema.safeParse(req.body);

@@ -28,7 +28,13 @@ export function TodayPage() {
 
   // 3. Fetch all-time PRs from dedicated endpoint (not limited to recent sessions)
   const { data: recentPrsRaw } = useQuery<
-    Array<{ exerciseName: string; weight: number; reps: number | null; unit: string; date: string | null }>
+    Array<{
+      exerciseName: string;
+      weight: number;
+      reps: number | null;
+      unit: string;
+      date: string | null;
+    }>
   >({
     queryKey: ["recentPrs"],
     queryFn: () => apiFetch("/progress/recent-prs"),
@@ -37,7 +43,10 @@ export function TodayPage() {
   const recentPrs = (recentPrsRaw ?? []).map((pr) => ({
     ...pr,
     date: pr.date
-      ? new Date(pr.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      ? new Date(pr.date).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        })
       : "",
   }));
 
@@ -109,8 +118,12 @@ export function TodayPage() {
       <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background px-4 pt-5 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Today</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{getGreeting()}, {displayName} 💪</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              Today
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {getGreeting()}, {displayName} 💪
+            </p>
           </div>
           <button className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground">
             <Bell className="size-5" />
@@ -118,16 +131,18 @@ export function TodayPage() {
         </div>
       </div>
 
-      <ProductButton
-        fullWidth
-        onClick={activeSession ? handleResumeWorkout : handleStartWorkout}
-      >
-        {loadingActive
-          ? "Loading session..."
-          : activeSession
-            ? "Resume Workout"
-            : "+ Start Workout"}
-      </ProductButton>
+      <div className="py-2">
+        <ProductButton
+          fullWidth
+          onClick={activeSession ? handleResumeWorkout : handleStartWorkout}
+        >
+          {loadingActive
+            ? "Loading session..."
+            : activeSession
+              ? "Resume Workout"
+              : "+ Start Workout"}
+        </ProductButton>
+      </div>
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-foreground">
@@ -178,10 +193,12 @@ export function TodayPage() {
             ))}
             {recentPrs.length > 3 && (
               <button
-                onClick={() => navigate("/history", { state: { prOnly: true } })}
+                onClick={() =>
+                  navigate("/history", { state: { prOnly: true } })
+                }
                 className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
               >
-                See all {recentPrs.length} PRs in History
+                Show All
               </button>
             )}
           </div>
@@ -201,7 +218,7 @@ export function TodayPage() {
 
         {recentSessions && recentSessions.length > 1 ? (
           <div className="rounded-xl border border-border bg-card p-4">
-            {recentSessions.slice(1).map((session, idx) => (
+            {recentSessions.slice(1, 4).map((session, idx) => (
               <button
                 key={session.id}
                 type="button"
@@ -213,12 +230,21 @@ export function TodayPage() {
                     {session.name}
                   </p>
                   <p className="mt-0.5 text-sm text-muted-foreground">
-                    {getSessionDate(session)} · {getSessionDuration(session)} · {getSessionSets(session)} sets · {getSessionVolume(session)}
+                    {getSessionDate(session)} · {getSessionDuration(session)} ·{" "}
+                    {getSessionSets(session)} sets · {getSessionVolume(session)}
                   </p>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </button>
             ))}
+            {recentSessions.length > 4 && (
+              <button
+                onClick={() => navigate("/history")}
+                className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
+              >
+                Show All
+              </button>
+            )}
           </div>
         ) : !loadingRecent ? (
           <p className="text-sm text-muted-foreground">

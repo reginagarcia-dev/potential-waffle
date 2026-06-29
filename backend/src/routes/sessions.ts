@@ -47,7 +47,7 @@ sessionsRouter.get('/', async (req: AuthenticatedRequest, res: Response, next: N
   try {
     const userId = req.userId!;
     const page = parseInt(req.query.page as string || '1');
-    const limit = parseInt(req.query.limit as string || '10');
+    const limit = Math.min(parseInt(req.query.limit as string || '10'), 100);
     const offset = (page - 1) * limit;
 
     const list = await db.query.workoutSessions.findMany({
@@ -399,7 +399,7 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
 
         const maxNum = maxSetRow.reduce((maxVal, s) => Math.max(maxVal, s.setNumber), 0);
 
-        // Inherit values from the previous set if exists for convenience
+        // Use the last set's values as ghost hints only — never pre-fill actual weight/reps
         const lastSet = await db.query.sets.findFirst({
           where: eq(sets.exerciseId, exerciseId),
           orderBy: [desc(sets.setNumber)],
@@ -410,9 +410,11 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
           setNumber: maxNum + 1,
           type: setType || 'working',
           status: 'pending',
-          weight: lastSet?.weight ?? null,
-          weightKg: lastSet?.weightKg ?? null,
-          reps: lastSet?.reps ?? null,
+          weight: null,
+          weightKg: null,
+          reps: null,
+          previousWeight: lastSet?.weight ?? null,
+          previousReps: lastSet?.reps ?? null,
         });
         break;
       }

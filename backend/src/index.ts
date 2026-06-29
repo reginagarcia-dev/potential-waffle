@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 // Load env files
 const __filename = fileURLToPath(import.meta.url);
@@ -11,7 +13,18 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config();
 
-// Import routers (we will write these next)
+// Refuse to start in production with default secrets
+if (process.env.NODE_ENV === 'production') {
+  const DEFAULT_JWT = 'supersecretjwtkeychangeinproduction12345';
+  const DEFAULT_REFRESH = 'supersecretjwtrefreshkeychangeinproduction54321';
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === DEFAULT_JWT) {
+    throw new Error('FATAL: JWT_SECRET must be set to a strong secret in production.');
+  }
+  if (!process.env.JWT_REFRESH_SECRET || process.env.JWT_REFRESH_SECRET === DEFAULT_REFRESH) {
+    throw new Error('FATAL: JWT_REFRESH_SECRET must be set to a strong secret in production.');
+  }
+}
+
 import { authRouter } from './routes/auth.js';
 import { sessionsRouter } from './routes/sessions.js';
 import { exercisesRouter } from './routes/exercises.js';
@@ -21,10 +34,13 @@ import { measurementsRouter } from './routes/measurements.js';
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Security headers
+app.use(helmet());
+
 // Enable CORS
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://127.0.0.1:5173'
+  'http://127.0.0.1:5173',
 ];
 
 app.use(cors({
@@ -39,19 +55,40 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
 }));
 
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: '50kb' }));
 
-// Request logger for debugging
+// Rate limiters
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+});
+
+const refreshLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many token refresh requests. Please wait a moment.' },
+});
+
+app.use('/auth/login', authLimiter);
+app.use('/auth/register', authLimiter);
+app.use('/auth/refresh', refreshLimiter);
+
+// Request logger
 app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// Base/Healthcheck route
+// Healthcheck
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
@@ -63,22 +100,22 @@ app.use('/exercises', exercisesRouter);
 app.use('/progress', progressRouter);
 app.use('/measurements', measurementsRouter);
 
-// Global 404 Route
+// 404
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Endpoint not found' });
 });
 
-// Global Error Handler
+// Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled Server Error:', err);
   res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error'
+    error: err.message || 'Internal Server Error',
   });
 });
 
 import { seedExercises } from './db/seed.js';
 
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`Workout Tracker API Server listening on port ${PORT}`);
   try {
     await seedExercises();
@@ -86,3 +123,19 @@ app.listen(PORT, async () => {
     console.error('Failed to run database seed on startup:', err);
   }
 });
+
+// Graceful shutdown
+const shutdown = () => {
+  console.log('Shutting down gracefully...');
+  server.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout.');
+    process.exit(1);
+  }, 10_000);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
