@@ -1,12 +1,65 @@
 @import "tailwindcss";
+@import "./styles/components.css";
 
+/* ═══════════════════════════════════════════════════════════════════
+   TAILWIND TOKEN MAP
+   Maps runtime CSS variables → Tailwind utility classes.
+   All color tokens reference :root / .light vars so every utility
+   (bg-*, text-*, border-*, shadow-*, ring-*) automatically adapts
+   when the theme class changes. Only fonts and structural tokens
+   (radii, spacing, type scale) are static values here.
+   ═══════════════════════════════════════════════════════════════════ */
 @theme {
-  /* Font */
-  --font-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  /* ── Typography: families ─────────────────────────────────────── */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 
-  /* Semantic colors */
+  /* ── Typography: generic scale (standard Tailwind names) ───────── */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+
+  /* ── Typography: semantic scale (UI-specific names) ────────────── */
+  --text-2xs: 0.625rem;          /* 10px — micro labels */
+  --text-2xs--line-height: 0.875rem;
+  --text-caption: 0.6875rem;     /* 11px — nav labels, badge text */
+  --text-caption--line-height: 1rem;
+  --text-label: 0.75rem;         /* 12px — field labels, chips */
+  --text-label--line-height: 1rem;
+  --text-body-sm: 0.8125rem;     /* 13px */
+  --text-body-sm--line-height: 1.125rem;
+  --text-body: 0.875rem;         /* 14px — default UI text */
+  --text-body--line-height: 1.25rem;
+  --text-body-lg: 1rem;          /* 16px */
+  --text-body-lg--line-height: 1.5rem;
+  --text-title: 1.125rem;        /* 18px — card titles */
+  --text-title--line-height: 1.5rem;
+  --text-h3: 1.25rem;            /* 20px */
+  --text-h3--line-height: 1.5rem;
+  --text-h2: 1.5rem;             /* 24px */
+  --text-h2--line-height: 1.75rem;
+  --text-h1: 1.75rem;            /* 28px */
+  --text-h1--line-height: 2rem;
+  --text-display-md: 1.875rem;   /* 30px — timer, hero numbers */
+  --text-display-md--line-height: 2.125rem;
+  --text-display-lg: 2.25rem;    /* 36px */
+  --text-display-lg--line-height: 2.5rem;
+
+  /* ── Colors — all theme-switchable via :root / .light ──────────── */
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
 
@@ -15,6 +68,7 @@
 
   --color-surface: hsl(var(--surface));
   --color-surface-foreground: hsl(var(--surface-foreground));
+  --color-surface-2: hsl(var(--surface-2));
 
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
@@ -31,35 +85,18 @@
   --color-accent-foreground: hsl(var(--accent-foreground));
 
   --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
   --color-danger: hsl(var(--danger));
+  --color-destructive: hsl(var(--danger)); /* alias — keeps shadcn compat */
+  --color-info: hsl(var(--info));
+
   --color-ring: hsl(var(--ring));
 
-  /* Typography scale */
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1rem;
+  /* Frosted-glass dividers — rgba values, not HSL-based */
+  --color-line-subtle: var(--line-subtle);
+  --color-line-strong: var(--line-strong);
 
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.25rem;
-
-  --text-base: 1rem;
-  --text-base--line-height: 1.5rem;
-
-  --text-lg: 1.125rem;
-  --text-lg--line-height: 1.75rem;
-
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.75rem;
-
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 2rem;
-
-  --text-3xl: 1.875rem;
-  --text-3xl--line-height: 2.25rem;
-
-  --text-4xl: 2.25rem;
-  --text-4xl--line-height: 2.5rem;
-
-  /* Radius */
+  /* ── Radius ────────────────────────────────────────────────────── */
   --radius-xs: 0.375rem;
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -67,52 +104,83 @@
   --radius-xl: 1.25rem;
   --radius-2xl: 1.5rem;
 
-  /* Shadows */
-  --shadow-card: 0 8px 24px rgb(0 0 0 / 0.24);
-  --shadow-elevated: 0 16px 40px rgb(0 0 0 / 0.36);
-  --shadow-bottomBar: 0 -8px 24px rgb(0 0 0 / 0.32);
-  --shadow-glow:
-    0 0 0 1px rgb(45 212 191 / 0.25), 0 0 24px rgb(45 212 191 / 0.12);
-  --shadow-amberGlow:
-    0 0 0 1px rgb(245 158 11 / 0.35), 0 0 18px rgb(245 158 11 / 0.16);
+  /* ── Spacing ───────────────────────────────────────────────────── */
+  --spacing-18: 4.5rem;
 
-  /* Letter spacing */
+  /* ── Shadows ───────────────────────────────────────────────────── */
+  --shadow-card: 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-elevated: 0 16px 40px rgb(0 0 0 / 0.36);
+  --shadow-float: 0 12px 32px rgb(0 0 0 / 0.45);
+  --shadow-bottomBar: 0 -8px 24px rgb(0 0 0 / 0.32);
+  --shadow-inner-soft: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --shadow-glow:
+    0 0 0 1px rgb(6 199 200 / 0.25),
+    0 0 24px rgb(6 199 200 / 0.12);
+  --shadow-brand-glow:
+    0 0 0 1px rgb(6 199 200 / 0.25),
+    0 8px 24px rgb(6 199 200 / 0.22);
+  --shadow-amberGlow:
+    0 0 0 1px rgb(245 158 11 / 0.35),
+    0 0 18px rgb(245 158 11 / 0.16);
+
+  /* ── Letter spacing ────────────────────────────────────────────── */
   --tracking-tightish: -0.015em;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   THEME: DARK  (default)
+   All values are raw HSL channels so opacity modifiers (/50 etc.)
+   work correctly via Tailwind's color-mix engine.
+   ═══════════════════════════════════════════════════════════════════ */
 @layer base {
   :root {
     color-scheme: dark;
 
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* Background depth — deepest → most elevated */
+    --background: 212 74% 5%;         /* #030b14 */
+    --foreground: 211 100% 96%;       /* #eaf4ff */
 
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
+    --card: 212 50% 11%;              /* #0e1b2a */
+    --card-foreground: 211 100% 96%;
 
-    --surface: 221 39% 11%;
-    --surface-foreground: 210 40% 98%;
+    --surface: 214 50% 14%;           /* #122236 */
+    --surface-foreground: 211 100% 96%;
 
-    --muted: 215 25% 27%;
-    --muted-foreground: 215 20% 65%;
+    --surface-2: 208 45% 19%;         /* #1b3348 */
 
-    --border: 215 25% 27%;
-    --input: 215 25% 27%;
+    --muted: 208 45% 19%;
+    --muted-foreground: 210 19% 52%;  /* #6f859c */
 
-    --primary: 174 72% 56%;
-    --primary-foreground: 222 47% 11%;
+    --border: 208 45% 19%;
+    --input: 208 45% 19%;
 
-    --primary-hover: 173 80% 40%;
-    --primary-pressed: 175 84% 32%;
+    /* Brand */
+    --primary: 180 94% 40%;           /* #06c7c8 */
+    --primary-foreground: 212 74% 5%;
+    --primary-hover: 180 100% 43%;    /* #00d8d9 */
+    --primary-pressed: 181 100% 35%;  /* #00aeb0 */
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 222 47% 11%;
+    /* Accent */
+    --accent: 40 91% 60%;             /* #f6b93b */
+    --accent-foreground: 212 74% 5%;
 
-    --success: 142 71% 45%;
-    --danger: 0 84% 60%;
-    --ring: 174 72% 56%;
+    /* Status */
+    --success: 164 72% 48%;           /* #22d3a3 */
+    --warning: 40 91% 60%;            /* #f6b93b */
+    --danger: 355 100% 69%;           /* #ff5f6d */
+    --info: 203 100% 68%;             /* #5bc0ff */
+
+    --ring: 180 94% 40%;
+
+    /* Frosted-glass dividers — rgba, not HSL */
+    --line-subtle: rgb(255 255 255 / 0.08);
+    --line-strong: rgb(255 255 255 / 0.16);
   }
 
+  /* ═══════════════════════════════════════════════════════════════════
+     THEME: LIGHT
+     Toggle by adding class="light" to <html>.
+     ═══════════════════════════════════════════════════════════════════ */
   .light {
     color-scheme: light;
 
@@ -125,26 +193,34 @@
     --surface: 210 40% 96%;
     --surface-foreground: 222 47% 11%;
 
+    --surface-2: 214 32% 91%;
+
     --muted: 214 32% 91%;
     --muted-foreground: 215 16% 47%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
 
-    --primary: 175 84% 32%;
+    --primary: 181 100% 35%;          /* #00aeb0 — darker for legibility */
     --primary-foreground: 210 40% 98%;
-
-    --primary-hover: 173 80% 40%;
-    --primary-pressed: 175 84% 24%;
+    --primary-hover: 180 100% 43%;
+    --primary-pressed: 181 100% 28%;
 
     --accent: 35 92% 48%;
     --accent-foreground: 222 47% 11%;
 
-    --success: 142 71% 45%;
-    --danger: 0 84% 60%;
-    --ring: 175 84% 32%;
+    --success: 164 72% 38%;
+    --warning: 35 92% 48%;
+    --danger: 355 100% 60%;
+    --info: 203 100% 55%;
+
+    --ring: 181 100% 35%;
+
+    --line-subtle: rgb(0 0 0 / 0.06);
+    --line-strong: rgb(0 0 0 / 0.12);
   }
 
+  /* ── Base resets ──────────────────────────────────────────────── */
   * {
     border-color: hsl(var(--border));
   }
@@ -155,14 +231,41 @@
 
   body {
     min-height: 100dvh;
-    background: hsl(var(--background));
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(
+      120% 90% at 50% 0%,
+      hsl(var(--card)) 0%,
+      hsl(var(--background)) 60%,
+      hsl(var(--background)) 100%
+    );
     color: hsl(var(--foreground));
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-line-subtle;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-line-strong;
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   CUSTOM UTILITIES
+   ═══════════════════════════════════════════════════════════════════ */
 @utility tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -173,4 +276,9 @@
 
 @utility pt-safe {
   padding-top: env(safe-area-inset-top);
+}
+
+/* Alias used in AppLayout nav — same as pb-safe */
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }

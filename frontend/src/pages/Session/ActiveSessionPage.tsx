@@ -266,7 +266,7 @@ export function ActiveSessionPage() {
                   },
                   {
                     label: "Discard Workout",
-                    icon: <Trash2 className="size-4" />,
+                    icon: <Trash2 className="size-4 text-danger" />,
                     destructive: true,
                     onClick: () => setIsDiscardOpen(true),
                   },

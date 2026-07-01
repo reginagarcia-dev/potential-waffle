@@ -80,7 +80,7 @@ export const DiscardWorkoutSheet: React.FC<DiscardWorkoutSheetProps> = ({
           disabled={isPending}
           onClick={onDiscard}
           className={cn(
-            "inline-flex h-12 w-full items-center justify-center rounded-xl bg-danger px-4 text-base font-semibold text-white",
+            "inline-flex h-12 w-full items-center justify-center rounded-xl bg-danger px-4 text-base font-semibold text-primary-foreground",
             "transition hover:bg-danger/90 active:bg-danger/80",
             "disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring",
           )}

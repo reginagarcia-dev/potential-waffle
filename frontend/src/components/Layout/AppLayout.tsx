@@ -13,7 +13,7 @@ export const AppLayout: React.FC = () => {
     location.pathname.match(/\/session\/[a-f0-9-]{36}$/i); // matches UUID session routes
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Main Content Area */}
       <main className="flex-1 px-4 py-6 pb-32">
         <div className="mx-auto max-w-lg">
@@ -26,13 +26,13 @@ export const AppLayout: React.FC = () => {
 
       {/* Navigation bottom bar */}
       {!hideNav && (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-900 bg-zinc-950/90 py-2.5 backdrop-blur-lg safe-bottom">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 py-2.5 backdrop-blur-lg safe-bottom">
           <div className="mx-auto flex max-w-lg items-center justify-around">
             <NavLink
               to="/"
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${
-                  isActive ? 'text-teal-400' : 'text-zinc-500 hover:text-zinc-300'
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`
               }
             >
@@ -44,7 +44,7 @@ export const AppLayout: React.FC = () => {
               to="/history"
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${
-                  isActive ? 'text-teal-400' : 'text-zinc-500 hover:text-zinc-300'
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`
               }
             >
@@ -56,7 +56,7 @@ export const AppLayout: React.FC = () => {
               to="/progress"
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${
-                  isActive ? 'text-teal-400' : 'text-zinc-500 hover:text-zinc-300'
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`
               }
             >
@@ -68,7 +68,7 @@ export const AppLayout: React.FC = () => {
               to="/settings"
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${
-                  isActive ? 'text-teal-400' : 'text-zinc-500 hover:text-zinc-300'
+                  isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`
               }
             >

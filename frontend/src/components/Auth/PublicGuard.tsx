@@ -8,8 +8,8 @@ export const PublicGuard: React.FC<{ children: React.ReactNode }> = ({ children 
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-black text-teal-400">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent border-teal-500"></div>
+      <div className="flex h-screen w-screen items-center justify-center bg-background text-primary">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent border-primary"></div>
       </div>
     );
   }

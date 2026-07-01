@@ -29,7 +29,7 @@ export const inputBase =
   "h-11 rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
 
 export const badgePr =
-  "inline-flex items-center rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-accent shadow-amberGlow";
+  "inline-flex items-center rounded-full border border-accent/60 bg-accent/10 px-2 py-0.5 text-caption font-bold uppercase tracking-wide text-accent shadow-amberGlow";
 
 export const bottomSheet =
   "fixed inset-x-0 bottom-0 mx-auto max-h-[85dvh] w-full max-w-md rounded-t-2xl border-t border-border bg-card p-4 shadow-elevated";

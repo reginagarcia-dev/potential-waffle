@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { WorkoutSetResponse } from "shared";
-import { CheckCircle2, Circle, Trash2, Award } from "lucide-react";
+import { Check, Trash2, Award } from "lucide-react";
 
 interface SetRowProps {
   set: WorkoutSetResponse;
@@ -180,17 +180,13 @@ export const SetRow: React.FC<SetRowProps> = ({
             type="button"
             onClick={onToggleComplete}
             aria-label={set.status === "completed" ? "Mark set incomplete" : "Complete set"}
-            className={`inline-flex size-9 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+            className={`inline-flex size-7.5 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
               set.status === "completed"
-                ? "border-primary bg-primary/15 text-primary shadow-glow"
-                : "border-muted-foreground/40 bg-card text-muted-foreground hover:border-primary hover:bg-primary/10 hover:text-primary"
+                ? "border-primary bg-primary/15 text-primary"
+                : "border-muted-foreground/30 text-transparent hover:border-primary hover:text-primary"
             }`}
           >
-            {set.status === "completed" ? (
-              <CheckCircle2 className="size-6" />
-            ) : (
-              <Circle className="size-6" />
-            )}
+            <Check className="size-4" />
           </button>
         </div>
 
@@ -199,7 +195,7 @@ export const SetRow: React.FC<SetRowProps> = ({
           type="button"
           onClick={onDelete}
           aria-label="Delete set"
-          className="inline-flex size-9 items-center justify-center justify-self-center rounded-full text-muted-foreground/70 transition-colors hover:bg-danger/10 hover:text-danger focus:outline-none focus:ring-2 focus:ring-ring"
+          className="inline-flex size-9 items-center justify-center justify-self-center rounded-full text-danger/70 transition-colors hover:bg-danger/10 hover:text-danger focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <Trash2 className="size-4" />
         </button>

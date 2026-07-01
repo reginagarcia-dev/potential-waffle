@@ -93,7 +93,7 @@ export const StartWorkoutPage: React.FC = () => {
         </header>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="rounded-lg bg-red-500/10 p-3 text-sm text-red-400 ring-1 ring-red-500/20">
+            <div className="rounded-lg bg-danger/10 p-3 text-sm text-danger ring-1 ring-danger/20">
               {error}
             </div>
           )}
@@ -181,7 +181,7 @@ export const StartWorkoutPage: React.FC = () => {
                   id="rest-seconds"
                   value={restSeconds}
                   onChange={(e) => setRestSeconds(parseInt(e.target.value))}
-                  className="block w-full appearance-none rounded-lg border border-zinc-800 bg-zinc-950/50 px-3 py-3 pr-10 text-white focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 sm:text-sm font-semibold"
+                  className="block w-full appearance-none rounded-lg border border-input bg-surface px-3 py-3 pr-10 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-semibold"
                 >
                   <option value={60}>1 minute</option>
                   <option value={90}>1 min 30s</option>
@@ -191,7 +191,7 @@ export const StartWorkoutPage: React.FC = () => {
                   <option value={240}>4 minutes</option>
                   <option value={300}>5 minutes</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               </div>
             </div>
           </section>
@@ -217,9 +217,9 @@ export const StartWorkoutPage: React.FC = () => {
             </button>
           </section>
 
-          <div className="fixed inset-x-0 bottom-24 z-30 mx-auto w-full max-w-md rounded-t-xl ">
+          <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4 pb-4 ">
             {startSessionMutation.isPending ? (
-              <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-white"></div>
+              <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-primary-foreground"></div>
             ) : (
               <ProductButton type="submit" fullWidth>
                 Start Workout

@@ -1,8 +1,10 @@
 @layer components {
+  /* ── Page shell ──────────────────────────────────────────────── */
   .app-screen {
-    @apply min-h-dvh bg-app-bg text-fg px-4 pt-4 pb-6;
+    @apply min-h-dvh bg-background text-foreground px-4 pt-4 pb-6;
   }
 
+  /* ── Navigation ──────────────────────────────────────────────── */
   .top-nav {
     @apply flex h-11 items-center justify-between;
   }
@@ -11,8 +13,9 @@
     @apply font-display text-h3 font-semibold tracking-tight;
   }
 
+  /* ── Cards ───────────────────────────────────────────────────── */
   .ui-card {
-    @apply rounded-md border border-line-subtle bg-surface/90 p-4 shadow-card backdrop-blur-sm;
+    @apply rounded-md border border-line-subtle bg-card/90 p-4 shadow-card backdrop-blur-sm;
   }
 
   .ui-card-tight {
@@ -20,44 +23,51 @@
   }
 
   .ui-card-title {
-    @apply text-body font-semibold text-fg;
+    @apply text-body font-semibold text-foreground;
   }
 
   .ui-card-meta {
-    @apply text-caption text-fg-muted;
+    @apply text-caption text-muted-foreground;
   }
 
+  /* ── Buttons ─────────────────────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex h-12 items-center justify-center rounded-lg bg-brand px-4 font-semibold text-app-bg shadow-brand-glow transition active:scale-[0.99] hover:bg-brand-hover;
+    @apply inline-flex h-12 items-center justify-center rounded-lg bg-primary px-4 font-semibold text-primary-foreground shadow-brand-glow transition active:scale-[0.99] hover:bg-primary-hover;
   }
 
   .btn-primary-wide {
-    @apply inline-flex h-12 w-full items-center justify-center rounded-lg bg-brand px-4 font-semibold text-app-bg shadow-brand-glow transition active:scale-[0.99] hover:bg-brand-hover;
-    background-image: linear-gradient(90deg, #04bcc2 0%, #06d1ca 100%);
+    @apply inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary px-4 font-semibold text-primary-foreground shadow-brand-glow transition active:scale-[0.99] hover:bg-primary-hover;
+    background-image: linear-gradient(
+      90deg,
+      hsl(var(--primary-pressed)) 0%,
+      hsl(var(--primary-hover)) 100%
+    );
   }
 
   .btn-ghost {
-    @apply inline-flex h-10 items-center justify-center rounded-md border border-line-subtle bg-surface-2/60 px-4 text-body text-fg-secondary transition hover:bg-surface-2/80;
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-line-subtle bg-surface-2/60 px-4 text-body text-muted-foreground transition hover:bg-surface-2/80;
   }
 
   .btn-outline-brand {
-    @apply inline-flex h-10 items-center justify-center rounded-md border border-brand/40 bg-brand-weak px-4 text-body font-medium text-brand transition hover:border-brand hover:bg-brand/20;
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-primary/40 bg-primary/15 px-4 text-body font-medium text-primary transition hover:border-primary hover:bg-primary/20;
   }
 
+  /* ── List rows ───────────────────────────────────────────────── */
   .list-row {
     @apply flex h-12 items-center justify-between rounded-sm border border-line-subtle bg-surface-2/70 px-3;
   }
 
   .list-row-title {
-    @apply text-body text-fg;
+    @apply text-body text-foreground;
   }
 
   .list-row-sub {
-    @apply text-caption text-fg-muted;
+    @apply text-caption text-muted-foreground;
   }
 
+  /* ── Form controls ───────────────────────────────────────────── */
   .field {
-    @apply h-11 w-full rounded-md border border-line-subtle bg-surface-2 px-3 text-body text-fg placeholder:text-fg-dim focus:outline-none focus:ring-2 focus:ring-brand/35;
+    @apply h-11 w-full rounded-md border border-line-subtle bg-surface-2 px-3 text-body text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/35;
   }
 
   .stepper-box {
@@ -65,21 +75,24 @@
   }
 
   .stepper-btn {
-    @apply inline-flex size-7 items-center justify-center rounded-full border border-line-subtle bg-surface text-title text-fg-secondary transition hover:text-fg;
+    @apply inline-flex size-7 items-center justify-center rounded-full border border-line-subtle bg-surface text-title text-muted-foreground transition hover:text-foreground;
   }
 
+  /* ── Filter chips ────────────────────────────────────────────── */
   .filter-chip {
-    @apply inline-flex h-7 items-center rounded-full border border-line-subtle px-3 text-caption text-fg-secondary;
+    @apply inline-flex h-7 items-center rounded-full border border-line-subtle px-3 text-caption text-muted-foreground;
   }
 
   .filter-chip-active {
-    @apply inline-flex h-7 items-center rounded-full border border-brand/40 bg-brand-weak px-3 text-caption text-brand;
+    @apply inline-flex h-7 items-center rounded-full border border-primary/40 bg-primary/15 px-3 text-caption text-primary;
   }
 
+  /* ── Badges ──────────────────────────────────────────────────── */
   .pr-badge {
     @apply inline-flex h-5 items-center rounded-full bg-warning/20 px-2 text-caption font-semibold text-warning;
   }
 
+  /* ── Bottom sheet ────────────────────────────────────────────── */
   .sheet {
     @apply rounded-t-xl border-t border-line-subtle bg-surface/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-float backdrop-blur-md;
   }
@@ -88,37 +101,39 @@
     @apply mx-auto mb-3 h-1 w-10 rounded-full bg-white/20;
   }
 
+  /* ── Session timer ───────────────────────────────────────────── */
   .timer-ring-wrap {
     @apply rounded-full p-2;
     background-image: conic-gradient(
       from 180deg at 50% 50%,
-      #06c7c8 0%,
-      #0e2b3a 60%,
-      #0e2b3a 100%
+      hsl(var(--primary)) 0%,
+      hsl(var(--card)) 60%,
+      hsl(var(--card)) 100%
     );
   }
 
   .timer-core {
-    @apply flex size-44 items-center justify-center rounded-full bg-app-bg;
+    @apply flex size-44 items-center justify-center rounded-full bg-background;
   }
 
   .timer-value {
-    @apply font-display text-display-md font-semibold leading-none text-fg tabular-nums;
+    @apply font-display text-display-md font-semibold leading-none text-foreground tabular-nums;
   }
 
+  /* ── Set rows (workout log) ──────────────────────────────────── */
   .set-row {
     @apply grid h-9 grid-cols-[20px_1fr_1fr_1fr_24px] items-center gap-2 text-body;
   }
 
   .set-cell-muted {
-    @apply text-fg-muted;
+    @apply text-muted-foreground;
   }
 
   .set-cell-value {
-    @apply text-fg;
+    @apply text-foreground;
   }
 
   .set-cell-active {
-    @apply text-brand;
+    @apply text-primary;
   }
 }

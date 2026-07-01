@@ -108,7 +108,7 @@ export const SettingsPage: React.FC = () => {
 
         <ProductButton type="submit" fullWidth disabled={submitting}>
           {submitting ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-white"></div>
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-primary-foreground"></div>
           ) : (
             "Save Preferences"
           )}

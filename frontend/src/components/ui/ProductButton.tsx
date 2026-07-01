@@ -14,7 +14,7 @@ const variants: Record<ProductButtonVariant, string> = {
   secondary:
     "border border-border bg-surface text-foreground hover:bg-muted/60",
   ghost: "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-  danger: "bg-danger text-white hover:bg-danger/90 active:bg-danger/80",
+  danger: "bg-danger text-primary-foreground hover:bg-danger/90 active:bg-danger/80",
 };
 
 export function ProductButton({

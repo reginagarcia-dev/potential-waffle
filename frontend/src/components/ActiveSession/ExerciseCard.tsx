@@ -51,7 +51,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 e.stopPropagation();
                 setIsDeleteOpen(true);
               }}
-              className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-danger"
+              className="inline-flex size-8 items-center justify-center rounded-full text-danger/70 transition-colors hover:bg-danger/10 hover:text-danger"
             >
               <Trash2 className="size-4" />
             </button>

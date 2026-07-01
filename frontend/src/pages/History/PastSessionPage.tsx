@@ -138,7 +138,7 @@ export const PastSessionPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsDeleteOpen(true)}
-          className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-danger"
+          className="inline-flex size-10 items-center justify-center rounded-full text-danger/70 transition hover:bg-danger/10 hover:text-danger"
         >
           <Trash2 className="size-5" />
         </button>
@@ -307,7 +307,7 @@ export const PastSessionPage: React.FC = () => {
             type="button"
             disabled={deleteMutation.isPending}
             onClick={() => deleteMutation.mutate()}
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-danger px-4 text-base font-semibold text-white transition hover:bg-danger/90 active:bg-danger/80 disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-danger px-4 text-base font-semibold text-primary-foreground transition hover:bg-danger/90 active:bg-danger/80 disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {deleteMutation.isPending ? "Deleting..." : "Delete Workout"}
           </button>

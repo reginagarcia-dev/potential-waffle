@@ -131,9 +131,10 @@ export function TodayPage() {
         </div>
       </div>
 
-      <div className="py-2">
+      <div className="flex justify-center py-2">
         <ProductButton
           fullWidth
+          className="px-10"
           onClick={activeSession ? handleResumeWorkout : handleStartWorkout}
         >
           {loadingActive
