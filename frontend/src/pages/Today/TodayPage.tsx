@@ -115,7 +115,7 @@ export function TodayPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 px-4">
-      <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background px-4 pt-5 pb-4">
+      <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-4 border-b border-border bg-background px-4 pt-6 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">

@@ -271,6 +271,18 @@
    regardless of specificity — required for these to take effect.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Fill the notch/dynamic-island zone with the app background so it
+   never appears black when viewport-fit=cover is set. */
+html {
+  background-color: hsl(var(--background));
+}
+
+/* Push all body content below the safe area (notch / dynamic island).
+   Sticky headers must use top-[env(safe-area-inset-top)] to match. */
+body {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* Prevent iOS Safari from auto-zooming when inputs are focused.
    Only applies on touch devices so desktop sizing is unaffected. */
 @media (hover: none) and (pointer: coarse) {

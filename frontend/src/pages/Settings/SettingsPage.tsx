@@ -29,7 +29,7 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 px-4">
-      <div className="sticky top-0 z-10 -mx-4 border-b border-border bg-background px-4 pt-5 pb-4">
+      <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-4 border-b border-border bg-background px-4 pt-6 pb-4">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">
           {/* <Settings className="size-6 text-muted-foreground" /> */}
           Settings
