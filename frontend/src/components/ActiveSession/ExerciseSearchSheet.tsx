@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Dumbbell, Plus, Search, X } from "lucide-react";
 import { apiFetch } from "../../lib/api.js";
 import { cn } from "../../lib/utils";
@@ -32,7 +32,13 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [muscleGroup, setMuscleGroup] = useState<MuscleGroup | "">("");
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(id);
+  }, [search]);
 
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customName, setCustomName] = useState("");
@@ -86,6 +92,7 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setSearch("");
+      setDebouncedSearch("");
       setMuscleGroup("");
       setShowCustomForm(false);
       setCustomName("");
@@ -95,9 +102,9 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
   }, [isOpen]);
 
   const { data: exercises = [], isLoading } = useQuery<ExerciseDefinition[]>({
-    queryKey: ["exercises", search, muscleGroup],
+    queryKey: ["exercises", debouncedSearch, muscleGroup],
     queryFn: () => {
-      let query = `/exercises?q=${encodeURIComponent(search)}`;
+      let query = `/exercises?q=${encodeURIComponent(debouncedSearch)}`;
 
       if (muscleGroup) {
         query += `&muscleGroup=${muscleGroup}`;
@@ -106,6 +113,7 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
       return apiFetch(query);
     },
     enabled: isOpen,
+    placeholderData: keepPreviousData,
   });
 
   const createExerciseMutation = useMutation({
