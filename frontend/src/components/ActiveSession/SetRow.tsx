@@ -91,13 +91,13 @@ export const SetRow: React.FC<SetRowProps> = ({
     <div className="relative overflow-hidden rounded-xl">
       <div
         className={`relative grid grid-cols-[2rem_1fr_1fr_3rem_2.5rem] items-center gap-2 rounded-xl border px-4 py-3 transition-all ${
-          set.status === "completed"
-            ? "border-primary/35 bg-primary/5 shadow-glow"
-            : "border-border bg-surface/80 hover:border-primary/40 hover:bg-surface"
-        } ${
           set.type === "warmup"
-            ? "border-border/70 bg-muted/25 text-muted-foreground"
-            : ""
+            ? set.status === "completed"
+              ? "border-warmup/35 bg-warmup/8 text-muted-foreground"
+              : "border-warmup/25 bg-warmup/5 text-muted-foreground hover:border-warmup/40 hover:bg-warmup/10"
+            : set.status === "completed"
+              ? "border-primary/35 bg-primary/5 shadow-glow"
+              : "border-border bg-surface/80 hover:border-primary/40 hover:bg-surface"
         }`}
       >
         {/* Set identifier — tap to open full edit sheet (RPE, set type, etc.) */}
@@ -108,7 +108,7 @@ export const SetRow: React.FC<SetRowProps> = ({
           aria-label="Edit set details"
         >
           {set.type === "warmup" ? (
-            <span className="inline-flex size-7 items-center justify-center rounded-full border border-border bg-muted/60 text-xs font-bold text-muted-foreground">
+            <span className="inline-flex size-7 items-center justify-center rounded-full border border-warmup/40 bg-warmup/15 text-xs font-bold text-warmup">
               W
             </span>
           ) : (
@@ -181,9 +181,13 @@ export const SetRow: React.FC<SetRowProps> = ({
             onClick={onToggleComplete}
             aria-label={set.status === "completed" ? "Mark set incomplete" : "Complete set"}
             className={`inline-flex size-7.5 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
-              set.status === "completed"
-                ? "border-primary bg-primary/15 text-primary"
-                : "border-muted-foreground/30 text-transparent hover:border-primary hover:text-primary"
+              set.type === "warmup"
+                ? set.status === "completed"
+                  ? "border-warmup bg-warmup/15 text-warmup"
+                  : "border-muted-foreground/30 text-transparent hover:border-warmup hover:text-warmup"
+                : set.status === "completed"
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-muted-foreground/30 text-transparent hover:border-primary hover:text-primary"
             }`}
           >
             <Check className="size-4" />

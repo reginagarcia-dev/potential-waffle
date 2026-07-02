@@ -87,6 +87,7 @@
   --color-success: hsl(var(--success));
   --color-warning: hsl(var(--warning));
   --color-danger: hsl(var(--danger));
+  --color-warmup: hsl(var(--warmup));
   --color-destructive: hsl(var(--danger)); /* alias — keeps shadcn compat */
   --color-info: hsl(var(--info));
 
@@ -168,6 +169,7 @@
     --success: 164 72% 48%;           /* #22d3a3 */
     --warning: 40 91% 60%;            /* #f6b93b */
     --danger: 355 100% 69%;           /* #ff5f6d */
+    --warmup: 24 85% 60%;
     --info: 203 100% 68%;             /* #5bc0ff */
 
     --ring: 180 94% 40%;

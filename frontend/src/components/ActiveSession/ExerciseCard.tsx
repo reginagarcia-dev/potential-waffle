@@ -118,7 +118,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <button
                 type="button"
                 onClick={() => onAddSet(exercise.id, "warmup")}
-                className="flex items-center justify-center rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                className="flex items-center justify-center rounded-lg border border-warmup/40 bg-warmup/10 px-3 py-2 text-xs font-semibold text-warmup transition-colors hover:bg-warmup/20"
               >
                 + Warm-up
               </button>
