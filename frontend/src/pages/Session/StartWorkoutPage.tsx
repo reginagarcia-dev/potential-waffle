@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
 
 import { useAuth } from "../../context/AuthContext.js";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { BinaryToggle } from "@/components/ui/BinaryToggle";
-// import { ArrowLeft, Play, Timer } from "lucide-react";
 import { ArrowLeft, Dumbbell, Timer, ChevronDown } from "lucide-react";
+import { WorkoutSessionResponse } from "shared";
 
 export const StartWorkoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +26,25 @@ export const StartWorkoutPage: React.FC = () => {
     user?.defaultRestSeconds || 180,
   );
   const [error, setError] = useState<string | null>(null);
+
+  const { data: recentSessions = [] } = useQuery<WorkoutSessionResponse[]>({
+    queryKey: ["recentSessions", 1],
+    queryFn: () => apiFetch("/sessions?page=1&limit=1"),
+  });
+  const recentSession = recentSessions[0] ?? null;
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  const formatDuration = (start: string, end: string) => {
+    const mins = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000);
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  };
+
+  const countSets = (session: WorkoutSessionResponse) =>
+    session.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
 
   // Mutation to start the workout session
   const startSessionMutation = useMutation({
@@ -196,26 +215,25 @@ export const StartWorkoutPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4">
-            <h2 className="text-sm font-semibold text-foreground">
-              Recent workout
-            </h2>
-
-            <button
-              type="button"
-              className="mt-3 w-full rounded-xl border border-border bg-surface p-4 text-left transition hover:bg-muted/60"
-            >
-              <p className="text-sm font-semibold text-foreground">
-                Lower Body A
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Jun 21 · 54 min · 18 sets
-              </p>
-              <p className="mt-2 text-xs text-primary">
-                Start blank workout and add the same exercises manually for now.
-              </p>
-            </button>
-          </section>
+          {recentSession && (
+            <section className="rounded-xl border border-border bg-card p-4">
+              <h2 className="text-sm font-semibold text-foreground">
+                Recent workout
+              </h2>
+              <div className="mt-3 w-full rounded-xl border border-border bg-surface p-4 text-left">
+                <p className="text-sm font-semibold text-foreground">
+                  {recentSession.name}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {formatDate(recentSession.completedAt!)}
+                  {" · "}
+                  {formatDuration(recentSession.startedAt, recentSession.completedAt!)}
+                  {" · "}
+                  {countSets(recentSession)} sets
+                </p>
+              </div>
+            </section>
+          )}
 
           <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4 pb-4 ">
             {startSessionMutation.isPending ? (
