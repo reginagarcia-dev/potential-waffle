@@ -354,13 +354,6 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
                 previousReps: prev.reps,
               }))
             );
-          } else {
-            await tx.insert(sets).values({
-              exerciseId: sessionEx.id,
-              setNumber: 1,
-              type: 'working',
-              status: 'pending',
-            });
           }
         });
         break;

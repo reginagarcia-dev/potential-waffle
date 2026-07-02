@@ -277,12 +277,6 @@ html {
   background-color: hsl(var(--background));
 }
 
-/* Push all body content below the safe area (notch / dynamic island).
-   Sticky headers must use top-[env(safe-area-inset-top)] to match. */
-body {
-  padding-top: env(safe-area-inset-top);
-}
-
 /* Prevent iOS Safari from auto-zooming when inputs are focused.
    Only applies on touch devices so desktop sizing is unaffected. */
 @media (hover: none) and (pointer: coarse) {

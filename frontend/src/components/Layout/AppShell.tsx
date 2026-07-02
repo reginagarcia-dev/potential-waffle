@@ -10,6 +10,8 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-dvh overflow-x-auto bg-background text-foreground">
       <main className="mx-auto flex min-h-dvh w-full min-w-[320px] max-w-md flex-col pb-20">
+        {/* Pushes content below the notch/dynamic island without inflating the scroll container */}
+        <div className="h-[env(safe-area-inset-top)] shrink-0" />
         {children ?? <Outlet />}
       </main>
       <BottomNav />
