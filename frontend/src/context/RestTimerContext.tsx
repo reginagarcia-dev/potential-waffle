@@ -54,9 +54,11 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
     updateRemaining();
 
     const intervalId = window.setInterval(updateRemaining, 250);
+    document.addEventListener("visibilitychange", updateRemaining);
 
     return () => {
       window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", updateRemaining);
     };
   }, [endsAt]);
 

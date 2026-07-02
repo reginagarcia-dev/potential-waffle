@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:4000';
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;

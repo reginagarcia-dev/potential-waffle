@@ -13,10 +13,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkeychangeinproductio
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'supersecretjwtrefreshkeychangeinproduction54321';
 
 // Cookie settings for refresh token
+const isProd = process.env.NODE_ENV === 'production';
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: isProd,
+  sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 

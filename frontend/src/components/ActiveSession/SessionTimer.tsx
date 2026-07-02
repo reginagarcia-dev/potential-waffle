@@ -13,7 +13,11 @@ export function SessionTimer({ startedAt }: SessionTimerProps) {
       setElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)));
     tick();
     const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", tick);
+    };
   }, [startedAt]);
 
   const h = Math.floor(elapsed / 3600);
