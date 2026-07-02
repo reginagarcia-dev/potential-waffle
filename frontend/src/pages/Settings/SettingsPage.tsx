@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext.js";
-import { LogOut, Settings, Timer, ShieldCheck } from "lucide-react";
+import { LogOut, Timer, ShieldCheck } from "lucide-react";
 import { ProductButton } from "@/components/ui/ProductButton";
 
 export const SettingsPage: React.FC = () => {
