@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { TodayPage } from "@/pages/Today/TodayPage";
 import { ActiveSessionPage } from "@/pages/Session/ActiveSessionPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Import screens
 import { LoginPage } from "./pages/Auth/LoginPage";
@@ -18,13 +19,17 @@ import { SettingsPage } from "./pages/Settings/SettingsPage";
 import { PublicGuard } from "./components/Auth/PublicGuard";
 import { RestTimerProvider } from "./context/RestTimerContext";
 
+// Stable instance — must live outside the component so re-renders don't
+// create a new client and wipe the React Query cache mid-session.
+const queryClient = new QueryClient();
+
 export default function App() {
-  const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RestTimerProvider>
           <BrowserRouter>
+            <ErrorBoundary>
             <Routes>
               {/* Guest/Unauthenticated Routes */}
               <Route
@@ -69,6 +74,7 @@ export default function App() {
               {/* Fallback Direct Redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </ErrorBoundary>
           </BrowserRouter>
         </RestTimerProvider>
       </AuthProvider>
