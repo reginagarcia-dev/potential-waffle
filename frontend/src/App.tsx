@@ -10,6 +10,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 // Import screens
 import { LoginPage } from "./pages/Auth/LoginPage";
 import { RegisterPage } from "./pages/Auth/RegisterPage";
+import { ForgotPasswordPage } from "./pages/Auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/Auth/ResetPasswordPage";
 import { StartWorkoutPage } from "./pages/Session/StartWorkoutPage";
 import { WorkoutSummaryPage } from "./pages/Session/WorkoutSummaryPage";
 import { HistoryPage } from "./pages/History/HistoryPage";
@@ -48,6 +50,15 @@ export default function App() {
                   </PublicGuard>
                 }
               />
+              <Route
+                path="/forgot-password"
+                element={
+                  <PublicGuard>
+                    <ForgotPasswordPage />
+                  </PublicGuard>
+                }
+              />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               {/* Private/Authenticated Routes */}
               <Route

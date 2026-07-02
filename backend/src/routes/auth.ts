@@ -1,11 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { eq, and } from 'drizzle-orm';
+import crypto from 'crypto';
+import { eq, and, gt, isNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { users, workoutSessions } from '../db/schema.js';
+import { users, workoutSessions, passwordResetTokens } from '../db/schema.js';
 import { registerSchema, loginSchema, updatePreferencesSchema } from 'shared';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.js';
+import { sendPasswordResetEmail } from '../services/email.js';
 
 export const authRouter = Router();
 
@@ -255,6 +257,70 @@ authRouter.patch('/preferences', authenticateToken, async (req: AuthenticatedReq
       defaultRestSeconds: updatedUser.defaultRestSeconds,
       createdAt: updatedUser.createdAt.toISOString(),
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 8. Forgot password — always returns 200 to avoid email enumeration
+authRouter.post('/forgot-password', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const email = (req.body.email ?? '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+
+    if (user) {
+      // Invalidate any existing unused tokens for this user
+      await db
+        .update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(and(eq(passwordResetTokens.userId, user.id), isNull(passwordResetTokens.usedAt)));
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await db.insert(passwordResetTokens).values({ userId: user.id, token, expiresAt });
+
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+      await sendPasswordResetEmail(user.email, resetUrl);
+    }
+
+    // Same response whether user exists or not
+    return res.json({ message: 'If that email is registered, a reset link has been sent.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 9. Reset password
+authRouter.post('/reset-password', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    const resetToken = await db.query.passwordResetTokens.findFirst({
+      where: eq(passwordResetTokens.token, token),
+    });
+
+    if (!resetToken) return res.status(400).json({ error: 'Invalid or expired reset link' });
+    if (resetToken.usedAt) return res.status(400).json({ error: 'This reset link has already been used' });
+    if (resetToken.expiresAt < new Date()) return res.status(400).json({ error: 'This reset link has expired' });
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await db.transaction(async (tx) => {
+      await tx.update(users).set({ passwordHash }).where(eq(users.id, resetToken.userId));
+      await tx.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, resetToken.id));
+    });
+
+    return res.json({ message: 'Password updated successfully' });
   } catch (error) {
     next(error);
   }
