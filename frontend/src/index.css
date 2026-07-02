@@ -227,14 +227,6 @@
     border-color: hsl(var(--border));
   }
 
-  /* Prevent iOS Safari from auto-zooming when inputs are focused.
-     Only applies on touch devices so desktop sizing is unaffected. */
-  @media (hover: none) and (pointer: coarse) {
-    input, select, textarea {
-      font-size: 16px;
-    }
-  }
-
   html {
     font-family: var(--font-sans);
   }
@@ -270,6 +262,20 @@
 
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-line-strong;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOBILE OVERRIDES
+   Unlayered CSS wins over all @layer rules (base, components, utilities)
+   regardless of specificity — required for these to take effect.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Prevent iOS Safari from auto-zooming when inputs are focused.
+   Only applies on touch devices so desktop sizing is unaffected. */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px;
   }
 }
 
