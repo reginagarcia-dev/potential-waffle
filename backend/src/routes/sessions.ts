@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { eq, and, desc, asc, max, not, inArray } from 'drizzle-orm';
+import { eq, and, desc, asc, max, not, inArray, sql, isNotNull } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { workoutSessions, sessionExercises, sets, exerciseDefinitions, users } from '../db/schema.js';
 import { sessionMutationSchema } from 'shared';
@@ -172,42 +172,35 @@ sessionsRouter.post('/:id/finish', async (req: AuthenticatedRequest, res: Respon
       return res.status(400).json({ error: 'Only active workouts can be finished' });
     }
 
-    // Mark pending sets as completed if they have values, or delete them if empty?
-    // Usually, we transition all pending sets with weights/reps to completed.
-    // In this app, we'll mark any sets that have values as completed.
-    const exerciseRows = await db
-      .select({ id: sessionExercises.id })
-      .from(sessionExercises)
-      .where(eq(sessionExercises.sessionId, sessionId));
+    await db.transaction(async (tx) => {
+      const exerciseRows = await tx
+        .select({ id: sessionExercises.id })
+        .from(sessionExercises)
+        .where(eq(sessionExercises.sessionId, sessionId));
 
-    for (const ex of exerciseRows) {
-      // Auto-complete sets with filled values
-      await db
-        .update(sets)
-        .set({ status: 'completed', completedAt: new Date() })
-        .where(
-          and(
-            eq(sets.exerciseId, ex.id),
-            eq(sets.status, 'pending'),
-            not(eq(sets.weight, null as any)),
-            not(eq(sets.reps, null as any))
-          )
-        );
-    }
+      // Auto-complete all pending sets that have values in one query
+      if (exerciseRows.length > 0) {
+        await tx
+          .update(sets)
+          .set({ status: 'completed', completedAt: new Date() })
+          .where(
+            and(
+              inArray(sets.exerciseId, exerciseRows.map((e) => e.id)),
+              eq(sets.status, 'pending'),
+              isNotNull(sets.weight),
+              isNotNull(sets.reps)
+            )
+          );
+      }
 
-    const [finishedSession] = await db
-      .update(workoutSessions)
-      .set({
-        status: 'completed',
-        completedAt: new Date(),
-        notes: notes || null,
-      })
-      .where(eq(workoutSessions.id, sessionId))
-      .returning();
+      await tx
+        .update(workoutSessions)
+        .set({ status: 'completed', completedAt: new Date(), notes: notes || null })
+        .where(eq(workoutSessions.id, sessionId));
+    });
 
-    // Re-fetch finished session with populated values
     const fullSession = await db.query.workoutSessions.findFirst({
-      where: eq(workoutSessions.id, finishedSession.id),
+      where: eq(workoutSessions.id, sessionId),
       with: {
         exercises: {
           orderBy: (exercises, { asc }) => [asc(exercises.order)],
@@ -295,7 +288,6 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
       case 'add_exercise': {
         const exerciseDefId = mutation.exerciseDefinitionId;
 
-        // Fetch definition
         const definition = await db.query.exerciseDefinitions.findFirst({
           where: eq(exerciseDefinitions.id, exerciseDefId),
         });
@@ -304,7 +296,6 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
           return res.status(404).json({ error: 'Exercise definition not found' });
         }
 
-        // Get max order
         const exerciseList = await db
           .select({ order: sessionExercises.order })
           .from(sessionExercises)
@@ -312,23 +303,9 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
 
         const maxOrder = exerciseList.reduce((maxVal, item) => Math.max(maxVal, item.order), 0);
 
-        // Create session exercise
-        const [sessionEx] = await db
-          .insert(sessionExercises)
-          .values({
-            sessionId,
-            exerciseDefinitionId: exerciseDefId,
-            nameSnapshot: definition.name,
-            order: maxOrder + 1,
-          })
-          .returning();
-
-        // Check for historical performance from last completed session to pre-fill sets
+        // Fetch previous performance before opening the transaction
         const lastPerformance = await db
-          .select({
-            sessionExerciseId: sessionExercises.id,
-            completedAt: workoutSessions.completedAt,
-          })
+          .select({ sessionExerciseId: sessionExercises.id })
           .from(sessionExercises)
           .innerJoin(workoutSessions, eq(sessionExercises.sessionId, workoutSessions.id))
           .where(
@@ -341,41 +318,51 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
           .orderBy(desc(workoutSessions.completedAt))
           .limit(1);
 
-        if (lastPerformance.length > 0) {
-          // Fetch previous sets
-          const prevSets = await db
-            .select()
-            .from(sets)
-            .where(eq(sets.exerciseId, lastPerformance[0].sessionExerciseId))
-            .orderBy(asc(sets.setNumber));
+        const prevSets = lastPerformance.length > 0
+          ? await db
+              .select()
+              .from(sets)
+              .where(eq(sets.exerciseId, lastPerformance[0].sessionExerciseId))
+              .orderBy(asc(sets.setNumber))
+          : [];
 
-          // Mirror the set structure (count + types) from last session.
-          // Leave weight/reps blank so the user actively logs this session's numbers.
-          // Store the previous values as reference — shown as hints in the UI.
+        // Insert session exercise + all sets atomically
+        await db.transaction(async (tx) => {
+          const [sessionEx] = await tx
+            .insert(sessionExercises)
+            .values({
+              sessionId,
+              exerciseDefinitionId: exerciseDefId,
+              nameSnapshot: definition.name,
+              order: maxOrder + 1,
+            })
+            .returning();
+
           if (prevSets.length > 0) {
-            for (const prev of prevSets) {
-              await db.insert(sets).values({
+            // Mirror set structure from last session in one bulk insert.
+            // Leave weight/reps blank — previous values stored as UI hints only.
+            await tx.insert(sets).values(
+              prevSets.map((prev) => ({
                 exerciseId: sessionEx.id,
                 setNumber: prev.setNumber,
                 type: prev.type,
-                status: 'pending',
+                status: 'pending' as const,
                 weight: null,
                 weightKg: null,
                 reps: null,
                 previousWeight: prev.weight,
                 previousReps: prev.reps,
-              });
-            }
+              }))
+            );
+          } else {
+            await tx.insert(sets).values({
+              exerciseId: sessionEx.id,
+              setNumber: 1,
+              type: 'working',
+              status: 'pending',
+            });
           }
-        } else {
-          // No history: insert a single empty pending working set
-          await db.insert(sets).values({
-            exerciseId: sessionEx.id,
-            setNumber: 1,
-            type: 'working',
-            status: 'pending',
-          });
-        }
+        });
         break;
       }
 
@@ -424,67 +411,37 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
 
         const currentSet = await db.query.sets.findFirst({
           where: eq(sets.id, setId),
-          with: {
-            exercise: true,
-          },
+          with: { exercise: true },
         });
 
         if (!currentSet || currentSet.exercise.sessionId !== sessionId) {
           return res.status(404).json({ error: 'Set not found or unauthorized' });
         }
 
-        // Prepare updates
-        const updateData: any = {};
-        if (weight !== undefined) {
-          updateData.weight = weight;
-          updateData.weightKg = weight === null ? null : (session.unit === 'kg' ? weight : convertWeight(weight, 'lbs', 'kg'));
-        }
-        if (reps !== undefined) updateData.reps = reps;
-        if (rpe !== undefined) updateData.rpe = rpe;
-        if (setType !== undefined) updateData.type = setType;
-
-        if (status !== undefined) {
-          updateData.status = status;
-          if (status === 'completed') {
-            updateData.completedAt = new Date();
-          } else {
-            updateData.completedAt = null;
+        await db.transaction(async (tx) => {
+          const updateData: any = {};
+          if (weight !== undefined) {
+            updateData.weight = weight;
+            updateData.weightKg = weight === null ? null : (session.unit === 'kg' ? weight : convertWeight(weight, 'lbs', 'kg'));
           }
-        }
+          if (reps !== undefined) updateData.reps = reps;
+          if (rpe !== undefined) updateData.rpe = rpe;
+          if (setType !== undefined) updateData.type = setType;
 
-        // PR Detection
-        // Run PR check only when marking a working set as completed
-        const finalStatus = status ?? currentSet.status;
-        const finalType = setType ?? currentSet.type;
-        const finalWeight = weight !== undefined ? weight : currentSet.weight;
-        const finalWeightKg = weight !== undefined ? updateData.weightKg : currentSet.weightKg;
+          if (status !== undefined) {
+            updateData.status = status;
+            updateData.completedAt = status === 'completed' ? new Date() : null;
+          }
 
-        if (finalStatus === 'completed' && finalType === 'working' && finalWeightKg > 0) {
-          // Check if this weight beats all time high
-          const exerciseDefinitionId = currentSet.exercise.exerciseDefinitionId;
+          const finalStatus = status ?? currentSet.status;
+          const finalType = setType ?? currentSet.type;
+          const finalWeightKg = weight !== undefined ? updateData.weightKg : currentSet.weightKg;
 
-          const maxWeightResult = await db
-            .select({ maxWeightKg: max(sets.weightKg) })
-            .from(sets)
-            .innerJoin(sessionExercises, eq(sets.exerciseId, sessionExercises.id))
-            .innerJoin(workoutSessions, eq(sessionExercises.sessionId, workoutSessions.id))
-            .where(
-              and(
-                eq(sessionExercises.exerciseDefinitionId, exerciseDefinitionId),
-                eq(workoutSessions.userId, userId),
-                eq(sets.type, 'working'),
-                eq(sets.status, 'completed'),
-                not(eq(sets.id, setId)) // exclude this set itself
-              )
-            );
+          if (finalStatus === 'completed' && finalType === 'working' && finalWeightKg > 0) {
+            const exerciseDefinitionId = currentSet.exercise.exerciseDefinitionId;
 
-          const maxWeightKg = maxWeightResult[0]?.maxWeightKg ?? 0;
-          if (finalWeightKg > maxWeightKg) {
-            updateData.isPr = true;
-
-            // Clear isPr on any previous sets for this exercise that are now superseded
-            const oldPrSets = await db
-              .select({ id: sets.id })
+            const maxWeightResult = await tx
+              .select({ maxWeightKg: max(sets.weightKg) })
               .from(sets)
               .innerJoin(sessionExercises, eq(sets.exerciseId, sessionExercises.id))
               .innerJoin(workoutSessions, eq(sessionExercises.sessionId, workoutSessions.id))
@@ -494,26 +451,43 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
                   eq(workoutSessions.userId, userId),
                   eq(sets.type, 'working'),
                   eq(sets.status, 'completed'),
-                  eq(sets.isPr, true),
                   not(eq(sets.id, setId))
                 )
               );
 
-            if (oldPrSets.length > 0) {
-              await db
-                .update(sets)
-                .set({ isPr: false })
-                .where(inArray(sets.id, oldPrSets.map((s) => s.id)));
-            }
-          } else {
-            updateData.isPr = false;
-          }
-        }
+            const maxWeightKg = maxWeightResult[0]?.maxWeightKg ?? 0;
+            if (finalWeightKg > maxWeightKg) {
+              updateData.isPr = true;
 
-        await db
-          .update(sets)
-          .set(updateData)
-          .where(eq(sets.id, setId));
+              const oldPrSets = await tx
+                .select({ id: sets.id })
+                .from(sets)
+                .innerJoin(sessionExercises, eq(sets.exerciseId, sessionExercises.id))
+                .innerJoin(workoutSessions, eq(sessionExercises.sessionId, workoutSessions.id))
+                .where(
+                  and(
+                    eq(sessionExercises.exerciseDefinitionId, exerciseDefinitionId),
+                    eq(workoutSessions.userId, userId),
+                    eq(sets.type, 'working'),
+                    eq(sets.status, 'completed'),
+                    eq(sets.isPr, true),
+                    not(eq(sets.id, setId))
+                  )
+                );
+
+              if (oldPrSets.length > 0) {
+                await tx
+                  .update(sets)
+                  .set({ isPr: false })
+                  .where(inArray(sets.id, oldPrSets.map((s) => s.id)));
+              }
+            } else {
+              updateData.isPr = false;
+            }
+          }
+
+          await tx.update(sets).set(updateData).where(eq(sets.id, setId));
+        });
         break;
       }
 
@@ -549,37 +523,62 @@ sessionsRouter.patch('/:id', async (req: AuthenticatedRequest, res: Response, ne
       case 'prefill_sets': {
         const { exerciseId, sets: newSets } = mutation;
 
-        // Clear existing sets
-        await db.delete(sets).where(eq(sets.exerciseId, exerciseId));
+        await db.transaction(async (tx) => {
+          await tx.delete(sets).where(eq(sets.exerciseId, exerciseId));
 
-        // Insert new sets
-        for (let i = 0; i < newSets.length; i++) {
-          const s = newSets[i];
-          const weightKg = session.unit === 'kg' ? s.weight : convertWeight(s.weight, 'lbs', 'kg');
-          await db.insert(sets).values({
-            exerciseId,
-            setNumber: i + 1,
-            type: s.setType,
-            status: 'pending',
-            weight: s.weight,
-            weightKg,
-            reps: s.reps,
-            rpe: s.rpe || null,
-          });
-        }
+          if (newSets.length > 0) {
+            await tx.insert(sets).values(
+              newSets.map((s, i) => ({
+                exerciseId,
+                setNumber: i + 1,
+                type: s.setType,
+                status: 'pending' as const,
+                weight: s.weight,
+                weightKg: s.weight == null ? null : (session.unit === 'kg' ? s.weight : convertWeight(s.weight, 'lbs', 'kg')),
+                reps: s.reps,
+                rpe: s.rpe || null,
+              }))
+            );
+          }
+        });
         break;
       }
 
       case 'update_session_settings': {
-        await db
-          .update(workoutSessions)
-          .set({ unit: mutation.unit })
-          .where(eq(workoutSessions.id, sessionId));
+        await db.transaction(async (tx) => {
+          await tx
+            .update(workoutSessions)
+            .set({ unit: mutation.unit })
+            .where(eq(workoutSessions.id, sessionId));
 
-        await db
-          .update(users)
-          .set({ defaultRestSeconds: mutation.defaultRestSeconds, preferredUnit: mutation.unit })
-          .where(eq(users.id, userId));
+          await tx
+            .update(users)
+            .set({ defaultRestSeconds: mutation.defaultRestSeconds, preferredUnit: mutation.unit })
+            .where(eq(users.id, userId));
+
+          // Recalculate stored display weight when unit changes so values
+          // don't appear with the wrong magnitude after switching.
+          if (session.unit !== mutation.unit) {
+            const exIds = await tx
+              .select({ id: sessionExercises.id })
+              .from(sessionExercises)
+              .where(eq(sessionExercises.sessionId, sessionId));
+
+            if (exIds.length > 0) {
+              await tx
+                .update(sets)
+                .set({
+                  weight: mutation.unit === 'kg'
+                    ? sql`${sets.weightKg}`
+                    : sql`${sets.weightKg} * 2.20462`,
+                })
+                .where(and(
+                  inArray(sets.exerciseId, exIds.map((e) => e.id)),
+                  isNotNull(sets.weightKg)
+                ));
+            }
+          }
+        });
         break;
       }
 
