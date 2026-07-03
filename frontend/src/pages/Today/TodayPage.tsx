@@ -190,9 +190,9 @@ export function TodayPage() {
           Recent Workouts
         </h2>
 
-        {recentSessions && recentSessions.length > 1 ? (
+        {recentSessions && recentSessions.length > 0 ? (
           <div className="rounded-xl border border-border bg-card p-4">
-            {recentSessions.slice(1, 4).map((session, idx) => (
+            {recentSessions.slice(0, 3).map((session, idx) => (
               <button
                 key={session.id}
                 type="button"
@@ -211,7 +211,7 @@ export function TodayPage() {
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </button>
             ))}
-            {recentSessions.length > 4 && (
+            {recentSessions.length > 3 && (
               <button
                 onClick={() => navigate("/history")}
                 className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
@@ -223,9 +223,7 @@ export function TodayPage() {
         ) : !loadingRecent ? (
           <div className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-sm text-muted-foreground">
-              {recentSessions?.length === 1
-                ? "Complete more workouts to see your history here."
-                : "No workouts recorded yet."}
+              No workouts recorded yet.
             </p>
           </div>
         ) : null}

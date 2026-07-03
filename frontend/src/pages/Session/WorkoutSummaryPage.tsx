@@ -239,7 +239,7 @@ export const WorkoutSummaryPage: React.FC = () => {
             );
 
             const setSummary = completedWorkingSets
-              .map((set) => `${set.weight} × ${set.reps}`)
+              .map((set) => `${set.weight ?? "—"} × ${set.reps ?? "—"}`)
               .join(", ");
 
             return (
