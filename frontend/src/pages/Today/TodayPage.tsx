@@ -1,11 +1,10 @@
-import { Bell, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { WorkoutSessionResponse } from "shared";
 import { useAuth } from "@/context/AuthContext";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { PRBadge } from "@/components/workout/PRBadge";
-import { WorkoutSummaryCard } from "@/components/workout/WorkoutSummaryCard";
 import { useNavigate } from "react-router-dom";
 export function TodayPage() {
   const navigate = useNavigate();
@@ -125,9 +124,6 @@ export function TodayPage() {
               {getGreeting()}, {displayName} 💪
             </p>
           </div>
-          <button className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground">
-            <Bell className="size-5" />
-          </button>
         </div>
       </div>
 
@@ -144,29 +140,6 @@ export function TodayPage() {
               : "+ Start Workout"}
         </ProductButton>
       </div>
-
-      <section>
-        <h2 className="mb-2 text-sm font-semibold text-foreground">
-          Last Workout
-        </h2>
-
-        {loadingRecent ? (
-          <div className="h-20 animate-pulse rounded-xl bg-muted/30" />
-        ) : recentSessions && recentSessions.length > 0 ? (
-          <WorkoutSummaryCard
-            name={recentSessions[0].name}
-            date={getSessionDate(recentSessions[0])}
-            duration={getSessionDuration(recentSessions[0])}
-            sets={getSessionSets(recentSessions[0])}
-            volume={getSessionVolume(recentSessions[0])}
-            onClick={() => navigate(`/history/${recentSessions[0].id}`)}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No workouts yet — start your first one!
-          </p>
-        )}
-      </section>
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-foreground">
