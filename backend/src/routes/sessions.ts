@@ -483,9 +483,12 @@ sessionsRouter.patch(
             0,
           );
 
-          // Use the last set's values as ghost hints only — never pre-fill actual weight/reps
+          // Copy weight/reps from the last set of the same type so new sets start pre-filled
           const lastSet = await db.query.sets.findFirst({
-            where: eq(sets.exerciseId, exerciseId),
+            where: and(
+              eq(sets.exerciseId, exerciseId),
+              eq(sets.type, setType || "working"),
+            ),
             orderBy: [desc(sets.setNumber)],
           });
 
@@ -494,11 +497,11 @@ sessionsRouter.patch(
             setNumber: maxNum + 1,
             type: setType || "working",
             status: "pending",
-            weight: null,
-            weightKg: null,
-            reps: null,
-            previousWeight: lastSet?.weight ?? null,
-            previousReps: lastSet?.reps ?? null,
+            weight: lastSet?.weight ?? null,
+            weightKg: lastSet?.weightKg ?? null,
+            reps: lastSet?.reps ?? null,
+            previousWeight: lastSet?.previousWeight ?? null,
+            previousReps: lastSet?.previousReps ?? null,
           });
           break;
         }

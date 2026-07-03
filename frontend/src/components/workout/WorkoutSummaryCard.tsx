@@ -5,7 +5,6 @@ type WorkoutSummaryCardProps = {
   date: string;
   duration: string;
   sets: number;
-  volume: string;
   onClick?: () => void;
 };
 
@@ -14,7 +13,6 @@ export function WorkoutSummaryCard({
   date,
   duration,
   sets,
-  volume,
   onClick,
 }: WorkoutSummaryCardProps) {
   return (
@@ -30,7 +28,7 @@ export function WorkoutSummaryCard({
             {date} · {duration}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            {sets} sets · {volume}
+            {sets} sets
           </p>
         </div>
 

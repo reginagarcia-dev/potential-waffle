@@ -92,42 +92,13 @@ export const WorkoutSummaryPage: React.FC = () => {
     return acc + ex.sets.filter((set) => set.status === "completed").length;
   }, 0);
 
-  const totalVolume = session.exercises.reduce((acc, ex) => {
-    return (
-      acc +
-      ex.sets.reduce((sum, set) => {
-        if (
-          set.status === "completed" &&
-          set.type === "working" &&
-          set.weight &&
-          set.reps
-        ) {
-          return sum + set.weight * set.reps;
-        }
 
-        return sum;
-      }, 0)
-    );
-  }, 0);
-
-  const prList: Array<{
-    name: string;
-    weight: number;
-    reps: number;
-    estimatedOneRepMax: number;
-  }> = [];
+  const prList: Array<{ name: string; weight: number; reps: number }> = [];
 
   session.exercises.forEach((ex) => {
     ex.sets.forEach((set) => {
       if (set.isPr && set.weight && set.reps) {
-        const estimatedOneRepMax = Math.round(set.weight * (1 + set.reps / 30));
-
-        prList.push({
-          name: ex.nameSnapshot,
-          weight: set.weight,
-          reps: set.reps,
-          estimatedOneRepMax,
-        });
+        prList.push({ name: ex.nameSnapshot, weight: set.weight, reps: set.reps });
       }
     });
   });
@@ -148,7 +119,7 @@ export const WorkoutSummaryPage: React.FC = () => {
       </header>
 
       {/* Metrics Strip */}
-      <section className="mt-4 grid grid-cols-4 overflow-hidden rounded-xl border border-border bg-card shadow-card">
+      <section className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-card shadow-card">
         <div className="border-r border-border px-2 py-3 text-center">
           <p className="text-base font-semibold tabular-nums text-foreground">
             {formatDuration(durationSeconds)}
@@ -167,21 +138,12 @@ export const WorkoutSummaryPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="border-r border-border px-2 py-3 text-center">
+        <div className="px-2 py-3 text-center">
           <p className="text-base font-semibold tabular-nums text-foreground">
             {setsCount}
           </p>
           <p className="mt-0.5 text-xs font-medium text-muted-foreground">
             Sets
-          </p>
-        </div>
-
-        <div className="px-2 py-3 text-center">
-          <p className="text-base font-semibold tabular-nums text-foreground">
-            {totalVolume.toLocaleString()}
-          </p>
-          <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-            Volume
           </p>
         </div>
       </section>
@@ -201,23 +163,11 @@ export const WorkoutSummaryPage: React.FC = () => {
                   <p className="truncate text-sm font-semibold text-foreground">
                     {pr.name}
                   </p>
-
-                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                    {pr.weight} × {pr.reps}
-                  </p>
-
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Estimated 1RM
+                  <p className="mt-0.5 text-sm tabular-nums text-muted-foreground">
+                    {pr.weight} {session.unit} × {pr.reps} reps
                   </p>
                 </div>
-
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                    {pr.estimatedOneRepMax} {session.unit}
-                  </span>
-
-                  <PRBadge />
-                </div>
+                <PRBadge />
               </div>
             ))}
           </div>

@@ -74,24 +74,7 @@ export function TodayPage() {
       0,
     );
 
-  const getSessionVolume = (session: WorkoutSessionResponse) => {
-    const vol = session.exercises.reduce(
-      (acc, ex) =>
-        acc +
-        ex.sets.reduce((sum, s) => {
-          if (
-            s.status === "completed" &&
-            s.type === "working" &&
-            s.weight &&
-            s.reps
-          )
-            return sum + s.weight * s.reps;
-          return sum;
-        }, 0),
-      0,
-    );
-    return `${vol.toLocaleString()} ${session.unit}`;
-  };
+
 
   const handleStartWorkout = () => {
     navigate("/session/new");
@@ -205,7 +188,7 @@ export function TodayPage() {
                   </p>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     {getSessionDate(session)} · {getSessionDuration(session)} ·{" "}
-                    {getSessionSets(session)} sets · {getSessionVolume(session)}
+                    {getSessionSets(session)} sets
                   </p>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

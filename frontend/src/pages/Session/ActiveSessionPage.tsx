@@ -11,6 +11,7 @@ import {
   FileText,
   Pencil,
   Plus,
+  RefreshCw,
   Settings,
   Trash2,
 } from "lucide-react";
@@ -78,6 +79,43 @@ export function ActiveSessionPage() {
     },
   });
 
+  // Optimistic toggle mutation — applies status change immediately to the cache
+  const toggleMutation = useMutation({
+    mutationFn: (payload: { setId: string; status: "pending" | "completed" }) =>
+      apiFetch(`/sessions/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ type: "update_set", ...payload }),
+      }),
+    onMutate: async ({ setId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["activeSession"] });
+      const previous = queryClient.getQueryData<WorkoutSessionResponse>(["activeSession"]);
+      queryClient.setQueryData<WorkoutSessionResponse>(["activeSession"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          exercises: old.exercises.map((ex) => ({
+            ...ex,
+            sets: ex.sets.map((s) =>
+              s.id === setId
+                ? { ...s, status, completedAt: status === "completed" ? new Date().toISOString() : null }
+                : s,
+            ),
+          })),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["activeSession"], context.previous);
+      }
+    },
+    onSettled: (updatedSession) => {
+      if (updatedSession) queryClient.setQueryData(["activeSession"], updatedSession);
+      queryClient.invalidateQueries({ queryKey: ["activeSession"] });
+    },
+  });
+
   // Action handlers
   const handleRenameSession = () => {
     if (tempWorkoutName.trim()) {
@@ -135,42 +173,32 @@ export function ActiveSessionPage() {
     });
   };
 
-  const handleApplySuggestion = (exerciseId: string, weight: number, reps: number | null) => {
-    mutation.mutate({ type: "apply_overload_suggestion", exerciseId, weight, reps });
-  };
-
   const handleToggleSetStatus = (set: WorkoutSetResponse) => {
     const nextStatus = set.status === "completed" ? "pending" : "completed";
 
-    // Optimistically update database
-    mutation.mutate({
-      type: "update_set",
-      setId: set.id,
-      status: nextStatus,
-    });
+    toggleMutation.mutate({ setId: set.id, status: nextStatus });
 
     // Trigger Rest Timer!
     // Start timer only when completing a working set
     if (nextStatus === "completed" && set.type === "working") {
       const restTime = user?.defaultRestSeconds || 180;
 
-      // Look up next set info
-      let nextSetMsg = "Next Set";
+      // Look up next set or next exercise
+      let nextSetMsg: string | undefined;
       if (session) {
-        const parentExercise = session.exercises.find((ex) =>
+        const parentExerciseIdx = session.exercises.findIndex((ex) =>
           ex.sets.some((s) => s.id === set.id),
         );
+        const parentExercise = session.exercises[parentExerciseIdx];
         if (parentExercise) {
           const currentIdx = parentExercise.sets.findIndex(
             (s) => s.id === set.id,
           );
-          if (
-            currentIdx !== -1 &&
-            currentIdx + 1 < parentExercise.sets.length
-          ) {
+          if (currentIdx !== -1 && currentIdx + 1 < parentExercise.sets.length) {
             nextSetMsg = `${parentExercise.nameSnapshot} — Set ${currentIdx + 2}`;
           } else {
-            nextSetMsg = "Next exercise";
+            const nextExercise = session.exercises[parentExerciseIdx + 1];
+            nextSetMsg = nextExercise?.nameSnapshot;
           }
         }
       }
@@ -249,6 +277,14 @@ export function ActiveSessionPage() {
           <div className="flex items-center gap-2">
             {session && <SessionTimer startedAt={session.startedAt} />}
 
+            <button
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["activeSession"] })}
+              className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              aria-label="Refresh session"
+            >
+              <RefreshCw className="size-4" />
+            </button>
+
             <div className="relative">
               <EllipsisMenu
                 ariaLabel="Open workout options"
@@ -315,7 +351,6 @@ export function ActiveSessionPage() {
                 onDeleteExercise={handleDeleteExercise}
                 onTriggerSetEdit={handleTriggerSetEdit}
                 onUpdateSetValue={handleUpdateSetValue}
-                onApplySuggestion={handleApplySuggestion}
               />
             ))
           ) : (
@@ -440,25 +475,6 @@ export function ActiveSessionPage() {
             0,
           ) ?? 0
         }
-        volume={(() => {
-          const vol =
-            session?.exercises.reduce(
-              (acc, ex) =>
-                acc +
-                ex.sets.reduce((sum, s) => {
-                  if (
-                    s.status === "completed" &&
-                    s.type === "working" &&
-                    s.weight &&
-                    s.reps
-                  )
-                    return sum + s.weight * s.reps;
-                  return sum;
-                }, 0),
-              0,
-            ) ?? 0;
-          return `${vol.toLocaleString()} ${session?.unit ?? "lbs"}`;
-        })()}
         onClose={() => setIsFinishOpen(false)}
         onFinish={(notes) => {
           setIsFinishOpen(false);

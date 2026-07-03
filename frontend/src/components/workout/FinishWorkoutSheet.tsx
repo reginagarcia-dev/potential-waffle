@@ -7,7 +7,6 @@ type FinishWorkoutSheetProps = {
   elapsedMinutes: number;
   exercises: number;
   sets: number;
-  volume: string;
   onClose: () => void;
   onFinish: (notes: string) => void;
 };
@@ -17,7 +16,6 @@ export function FinishWorkoutSheet({
   elapsedMinutes,
   exercises,
   sets,
-  volume,
   onClose,
   onFinish,
 }: FinishWorkoutSheetProps) {
@@ -52,7 +50,6 @@ export function FinishWorkoutSheet({
           <SummaryRow label="Duration" value={`${elapsedMinutes} min`} />
           <SummaryRow label="Exercises" value={String(exercises)} />
           <SummaryRow label="Sets" value={String(sets)} />
-          <SummaryRow label="Total Volume" value={volume} />
         </div>
 
         <div className="mt-4">
