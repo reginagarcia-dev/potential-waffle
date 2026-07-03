@@ -248,11 +248,13 @@ export function TodayPage() {
             )}
           </div>
         ) : !loadingRecent ? (
-          <p className="text-sm text-muted-foreground">
-            {recentSessions?.length === 1
-              ? "Complete more workouts to see your history here."
-              : "No workouts recorded yet."}
-          </p>
+          <div className="rounded-xl border border-border bg-card p-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              {recentSessions?.length === 1
+                ? "Complete more workouts to see your history here."
+                : "No workouts recorded yet."}
+            </p>
+          </div>
         ) : null}
       </section>
     </div>
