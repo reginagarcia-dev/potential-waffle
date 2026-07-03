@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-07-02
+
+### Fixed
+
+- Workout summary no longer shows "null × null" for sets completed without weight or reps entered — displays "—" instead.
+- Today page now shows all recent completed workouts, including when there is only one.
+
 ## [1.0.2] - 2026-07-02
 
 ### Added
