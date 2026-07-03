@@ -88,7 +88,7 @@ export const PastSessionPage: React.FC = () => {
       : 0;
 
   const setsCount = session.exercises.reduce(
-    (acc, ex) => acc + ex.sets.length,
+    (acc, ex) => acc + ex.sets.filter((s) => s.type === "working").length,
     0,
   );
 
