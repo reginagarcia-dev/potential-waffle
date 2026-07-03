@@ -8,7 +8,6 @@ import {
   Clock,
   Dumbbell,
   Calendar,
-  Award,
   Trash2,
   X,
 } from "lucide-react";
@@ -140,7 +139,7 @@ export const PastSessionPage: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Clock className="mx-auto size-5 text-muted-foreground" />
+          <Clock className="mx-auto size-5 text-primary" />
           <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Duration
           </span>
@@ -150,7 +149,7 @@ export const PastSessionPage: React.FC = () => {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Dumbbell className="mx-auto size-5 text-muted-foreground" />
+          <Dumbbell className="mx-auto size-5 text-primary" />
           <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Exercises
           </span>
@@ -160,7 +159,7 @@ export const PastSessionPage: React.FC = () => {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Calendar className="mx-auto size-5 text-muted-foreground" />
+          <Calendar className="mx-auto size-5 text-primary" />
           <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Sets Logged
           </span>
@@ -170,11 +169,11 @@ export const PastSessionPage: React.FC = () => {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Award className="mx-auto size-5 text-muted-foreground" />
+          <PRBadge className="mx-auto size-7 p-1" />
           <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             PRs
           </span>
-          <span className="mt-1 block text-xl font-semibold tabular-nums text-primary">
+          <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">
             {prCount}
           </span>
         </div>

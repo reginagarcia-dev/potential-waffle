@@ -6,11 +6,11 @@ import {
   ArrowLeft,
   Search,
   Dumbbell,
-  Award,
   TrendingUp,
   ChevronRight,
   Activity,
 } from "lucide-react";
+import { PRBadge } from "@/components/workout/PRBadge";
 import {
   ResponsiveContainer,
   LineChart,
@@ -133,7 +133,7 @@ export const ProgressPage: React.FC = () => {
               {/* Highlight stats */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-border bg-card p-4 text-center">
-                  <Award className="mx-auto size-4 text-accent" />
+                  <PRBadge className="mx-auto size-6 p-1" />
                   <span className="mt-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     All-Time Max Weight
                   </span>

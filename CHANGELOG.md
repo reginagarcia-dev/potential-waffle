@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.7] - 2026-07-03
+
+### Changed
+
+- PR badge standardised to `PRBadge` (gold ring) across all pages — active session set rows, past session detail, and progress drill-down now all use the same component.
+- Past session summary card icons (Duration, Exercises, Sets Logged) updated to teal to match the app's primary colour.
+- PRs count on past session detail page now uses default foreground colour instead of teal.
+- Progress "All-Time Max Weight" stat card uses `PRBadge` instead of the plain Award icon.
+
 ## [1.0.6] - 2026-07-03
 
 ### Changed

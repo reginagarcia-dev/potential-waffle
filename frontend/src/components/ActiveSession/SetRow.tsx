@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { WorkoutSetResponse } from "shared";
-import { Check, Trash2, Award } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
+import { PRBadge } from "@/components/workout/PRBadge";
 
 interface SetRowProps {
   set: WorkoutSetResponse;
@@ -128,7 +129,7 @@ export const SetRow: React.FC<SetRowProps> = ({
             </span>
           )}
           {set.isPr && set.status === "completed" && (
-            <Award className="ml-1 size-3 fill-accent/20 text-accent" />
+            <PRBadge className="ml-1 size-4 p-0.5" />
           )}
         </button>
 
