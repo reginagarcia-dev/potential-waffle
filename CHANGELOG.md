@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-07-02
+
+### Added
+
+- Progressive overload suggestions on active workout exercise cards — shows the suggested weight (+5 lbs / +2.5 kg) and rep target based on the heaviest set from the previous session, with a one-tap Apply button and a dismiss option. Banner auto-hides once sets have values entered.
+
+### Fixed
+
+- Auth token refresh mid-session now correctly sends the refresh token cookie, preventing silent logout after 15 minutes of continuous use.
+
 ## [1.0.1] - 2026-07-02
 
 ### Added

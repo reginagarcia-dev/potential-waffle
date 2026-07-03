@@ -19,6 +19,7 @@ async function refreshTokens(): Promise<string | null> {
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },

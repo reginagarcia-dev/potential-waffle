@@ -739,6 +739,42 @@ sessionsRouter.patch(
             .where(eq(workoutSessions.id, sessionId));
           break;
         }
+
+        case "apply_overload_suggestion": {
+          const { exerciseId, weight, reps } = mutation;
+
+          const exercise = await db.query.sessionExercises.findFirst({
+            where: and(
+              eq(sessionExercises.id, exerciseId),
+              eq(sessionExercises.sessionId, sessionId),
+            ),
+          });
+
+          if (!exercise) {
+            return res.status(404).json({ error: "Exercise not found" });
+          }
+
+          const updateData: any = {
+            weight,
+            weightKg:
+              session.unit === "kg"
+                ? weight
+                : convertWeight(weight, "lbs", "kg"),
+          };
+          if (reps != null) updateData.reps = reps;
+
+          await db
+            .update(sets)
+            .set(updateData)
+            .where(
+              and(
+                eq(sets.exerciseId, exerciseId),
+                eq(sets.status, "pending"),
+                eq(sets.type, "working"),
+              ),
+            );
+          break;
+        }
       }
 
       // Return the full updated session

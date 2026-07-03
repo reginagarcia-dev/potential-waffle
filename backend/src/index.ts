@@ -34,6 +34,9 @@ import { measurementsRouter } from './routes/measurements.js';
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Trust Render's reverse proxy so express-rate-limit can read the real client IP
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
