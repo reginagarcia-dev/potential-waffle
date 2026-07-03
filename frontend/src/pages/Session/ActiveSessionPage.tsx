@@ -110,8 +110,7 @@ export function ActiveSessionPage() {
         queryClient.setQueryData(["activeSession"], context.previous);
       }
     },
-    onSettled: (updatedSession) => {
-      if (updatedSession) queryClient.setQueryData(["activeSession"], updatedSession);
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["activeSession"] });
     },
   });

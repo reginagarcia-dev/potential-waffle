@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { PRBadge } from "@/components/workout/PRBadge";
 import { WorkoutSessionResponse } from "shared";
 
 export const PastSessionPage: React.FC = () => {
@@ -226,11 +227,9 @@ export const PastSessionPage: React.FC = () => {
                           key={set.id}
                           className="grid grid-cols-3 border-b border-border/40 py-1.5 text-sm text-foreground last:border-0"
                         >
-                          <span className="flex items-center gap-1 text-muted-foreground">
+                          <span className="flex items-center gap-3 text-muted-foreground">
                             {setLabel}
-                            {set.isPr && (
-                              <Award className="size-3 fill-accent/20 text-accent" />
-                            )}
+                            {set.isPr && <PRBadge className="size-5 p-0.5" />}
                           </span>
                           <span className="text-right">
                             {set.weight}{" "}

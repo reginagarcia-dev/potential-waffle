@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-07-03
+
+### Added
+
+- PR badge shown next to set label on past session detail page.
+- Progress drill-down header now shows the exercise name and muscle group instead of the generic page title; redundant exercise card in the body removed.
+- Back arrow on Progress drill-down replaces the "Change" text link.
+
+### Fixed
+
+- Mobile re-auth on app resume no longer clears the user session on transient network errors — only clears on explicit auth failure.
+- Rest timer "complete" banner timeout now properly cancelled if a new timer starts before the 3-second auto-dismiss fires, preventing a stale state update on unmount.
+- Optimistic set toggle no longer redundantly calls `setQueryData` before immediately invalidating — reduces an unnecessary render cycle.
+
 ## [1.0.4] - 2026-07-03
 
 ### Added

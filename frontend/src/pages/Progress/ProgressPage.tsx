@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
 import { useAuth } from "../../context/AuthContext.js";
 import {
+  ArrowLeft,
   Search,
   Dumbbell,
   Award,
@@ -55,23 +56,23 @@ export const ProgressPage: React.FC = () => {
 
   return (
     <div className="space-y-6 px-4">
-      <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-4 flex items-center justify-between border-b border-border bg-background px-4 pt-6 pb-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Analytics & Progress
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Visualize your lifts over time
-          </p>
-        </div>
+      <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-4 flex items-center border-b border-border bg-background px-4 pt-6 pb-4 gap-3">
         {selectedExercise && (
           <button
             onClick={() => setSelectedExercise(null)}
-            className="text-sm font-semibold text-primary transition hover:text-primary/80"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
           >
-            Change
+            <ArrowLeft className="size-5" />
           </button>
         )}
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {selectedExercise ? selectedExercise.name : "Analytics & Progress"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {selectedExercise ? selectedExercise.muscleGroup?.toUpperCase() : "Visualize your lifts over time"}
+          </p>
+        </div>
       </div>
 
       {!selectedExercise ? (
@@ -128,21 +129,6 @@ export const ProgressPage: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Active exercise header */}
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-            <div className="flex size-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary">
-              <Dumbbell className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-foreground">
-                {selectedExercise.name}
-              </h2>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                {selectedExercise.muscleGroup}
-              </span>
-            </div>
-          </div>
-
           {loadingProgress ? (
             <div className="h-64 animate-pulse rounded-xl border border-border bg-muted/30" />
           ) : progressData && chartData.length > 0 ? (

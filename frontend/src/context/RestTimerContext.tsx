@@ -29,6 +29,7 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [nextLabel, setNextLabel] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const completeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRunning = endsAt !== null && timeRemaining > 0;
 
@@ -52,7 +53,8 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
           navigator.vibrate([200, 100, 200]);
         }
 
-        setTimeout(() => setIsComplete(false), 3000);
+        if (completeTimeoutRef.current) clearTimeout(completeTimeoutRef.current);
+        completeTimeoutRef.current = setTimeout(() => setIsComplete(false), 3000);
       }
     };
 
@@ -78,6 +80,7 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
+    if (completeTimeoutRef.current) clearTimeout(completeTimeoutRef.current);
     setIsComplete(false);
     setDuration(safeSeconds);
     setTimeRemaining(safeSeconds);
