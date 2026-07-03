@@ -94,6 +94,7 @@ export const HistoryPage: React.FC = () => {
   >({
     queryKey: ["workoutHistory", "pr"],
     enabled: prOnly,
+    // TODO: paginate or use a dedicated endpoint — PRs beyond 50 sessions won't appear
     queryFn: () => apiFetch("/sessions?page=1&limit=50"),
   });
 
@@ -124,6 +125,26 @@ export const HistoryPage: React.FC = () => {
     session.exercises.some((ex) => ex.sets.some((s) => s.isPr));
 
   const prSessions = completedSessions.filter(hasPr);
+
+  const prEntries = prSessions.flatMap((session) =>
+    session.exercises.flatMap((ex) =>
+      ex.sets
+        .filter((s) => s.isPr)
+        .map((s) => ({
+          id: s.id,
+          exerciseName: ex.nameSnapshot,
+          weight: s.weight,
+          reps: s.reps,
+          unit: session.unit,
+          date: session.completedAt
+            ? new Date(session.completedAt).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })
+            : "",
+        })),
+    ),
+  );
 
   const workoutDayKeys = new Set(
     monthSessions
@@ -315,7 +336,7 @@ export const HistoryPage: React.FC = () => {
 
       {prOnly || hasAnyCompletedSessions ? (
         <div className="space-y-6">
-          {prOnly && prSessions.length === 0 && (
+          {prOnly && prEntries.length === 0 && (
             <div className="rounded-xl border border-dashed border-border p-10 text-center">
               <Award className="mx-auto mb-3 size-8 text-muted-foreground" />
               <p className="text-sm font-semibold text-foreground">
@@ -328,7 +349,24 @@ export const HistoryPage: React.FC = () => {
           )}
 
           {prOnly ? (
-            <div className="space-y-2">{prSessions.map(renderSessionCard)}</div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              {prEntries.map((pr, idx) => (
+                <div
+                  key={pr.id}
+                  className={`flex items-center justify-between${idx > 0 ? " mt-4 border-t border-border pt-4" : ""}`}
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{pr.exerciseName}</p>
+                    <p className="text-sm tabular-nums text-muted-foreground">
+                      {pr.weight != null ? `${pr.weight} ${pr.unit}` : "—"}
+                      {pr.reps ? ` × ${pr.reps} reps` : ""}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{pr.date}</p>
+                  </div>
+                  <PRBadge />
+                </div>
+              ))}
+            </div>
           ) : (
             <>
               <div className="rounded-2xl border border-border bg-card p-4">

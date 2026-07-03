@@ -8,7 +8,6 @@ import {
   Dumbbell,
   Award,
   TrendingUp,
-  BarChart4,
   ChevronRight,
   Activity,
 } from "lucide-react";
@@ -16,8 +15,6 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -196,41 +193,6 @@ export const ProgressPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Volume Chart */}
-              <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-                <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <BarChart4 className="size-4 text-primary" />
-                  Session Volume Trend
-                </h3>
-                <div className="h-56 w-full text-xs text-muted-foreground">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData}
-                      margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="formattedDate" stroke="hsl(var(--muted-foreground))" />
-                      <YAxis stroke="hsl(var(--muted-foreground))" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--card))",
-                          borderColor: "hsl(var(--border))",
-                          borderRadius: "8px",
-                        }}
-                        labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold" }}
-                        itemStyle={{ color: "hsl(var(--primary))" }}
-                      />
-                      <Bar
-                        dataKey="volume"
-                        name="Total Volume"
-                        fill="hsl(var(--primary))"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
               {/* History table */}
               <div className="space-y-3 rounded-xl border border-border bg-card p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -246,16 +208,10 @@ export const ProgressPage: React.FC = () => {
                         className="flex items-center justify-between border-b border-border/40 py-2 text-sm font-semibold text-foreground last:border-0"
                       >
                         <span className="text-muted-foreground">{point.formattedDate}</span>
-                        <div className="flex gap-4">
-                          <span>
-                            Best:{" "}
-                            <span className="text-foreground">{point.bestWeight}</span>
-                          </span>
-                          <span>
-                            Vol:{" "}
-                            <span className="text-primary">{point.volume.toLocaleString()}</span>
-                          </span>
-                        </div>
+                        <span>
+                          Best:{" "}
+                          <span className="text-foreground">{point.bestWeight}</span>
+                        </span>
                       </div>
                     ))}
                 </div>

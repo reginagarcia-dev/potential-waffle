@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.6] - 2026-07-03
+
+### Changed
+
+- History "PRs only" mode now shows individual exercise PR entries (exercise name, weight × reps, date, PR badge) instead of workout session cards — matching the Today page format.
+- Past session detail "Sets Logged" summary count now excludes warmup sets; warmup rows still appear in the workout details table.
+- Progress page session volume trend chart and "Vol:" column removed from the history log.
+
+### Fixed
+
+- PR list empty-state guard now checks `prEntries` directly rather than `prSessions` for correctness.
+- PR entries now use stable set IDs as React keys instead of array indices.
+
 ## [1.0.5] - 2026-07-03
 
 ### Added
