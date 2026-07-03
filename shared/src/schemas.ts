@@ -82,6 +82,13 @@ export const updateSessionNotesSchema = z.object({
   notes: z.string(),
 });
 
+export const applyOverloadSuggestionSchema = z.object({
+  type: z.literal('apply_overload_suggestion'),
+  exerciseId: z.string().uuid(),
+  weight: z.number().positive(),
+  reps: z.number().int().positive().nullable().optional(),
+});
+
 export const sessionMutationSchema = z.discriminatedUnion('type', [
   renameSessionSchema,
   addExerciseSchema,
@@ -92,6 +99,7 @@ export const sessionMutationSchema = z.discriminatedUnion('type', [
   prefillSetsSchema,
   updateSessionSettingsSchema,
   updateSessionNotesSchema,
+  applyOverloadSuggestionSchema,
 ]);
 
 export type SessionMutationInput = z.infer<typeof sessionMutationSchema>;

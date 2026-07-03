@@ -135,6 +135,10 @@ export function ActiveSessionPage() {
     });
   };
 
+  const handleApplySuggestion = (exerciseId: string, weight: number, reps: number | null) => {
+    mutation.mutate({ type: "apply_overload_suggestion", exerciseId, weight, reps });
+  };
+
   const handleToggleSetStatus = (set: WorkoutSetResponse) => {
     const nextStatus = set.status === "completed" ? "pending" : "completed";
 
@@ -311,6 +315,7 @@ export function ActiveSessionPage() {
                 onDeleteExercise={handleDeleteExercise}
                 onTriggerSetEdit={handleTriggerSetEdit}
                 onUpdateSetValue={handleUpdateSetValue}
+                onApplySuggestion={handleApplySuggestion}
               />
             ))
           ) : (
