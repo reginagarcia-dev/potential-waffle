@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from 'shared';
-import { apiFetch, setAccessToken } from '../lib/api.js';
+import { apiFetch, getAccessToken, setAccessToken } from '../lib/api.js';
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +33,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     attemptSilentLogin();
+  }, []);
+
+  // Re-authenticate when the app becomes visible again (mobile tab resume)
+  useEffect(() => {
+    async function handleVisibilityChange() {
+      if (document.visibilityState !== 'visible') return;
+      if (getAccessToken()) return; // token still in memory, no action needed
+      try {
+        const data = await apiFetch('/auth/refresh', { method: 'POST', skipAuth: true });
+        if (data?.accessToken && data?.user) {
+          setAccessToken(data.accessToken);
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      } catch {
+        // Don't clear user on network error — they may just be temporarily offline
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
   const login = async (email: string, password: string) => {

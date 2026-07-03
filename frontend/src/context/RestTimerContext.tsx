@@ -10,8 +10,9 @@ interface RestTimerContextType {
   timeRemaining: number;
   duration: number;
   isRunning: boolean;
+  isComplete: boolean;
   nextLabel: string | null;
-  startTimer: (seconds: number, label?: string) => void;
+  startTimer: (seconds: number, label?: string | undefined) => void;
   addThirtySeconds: () => void;
   skipTimer: () => void;
 }
@@ -27,6 +28,8 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [endsAt, setEndsAt] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [nextLabel, setNextLabel] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
+  const completeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isRunning = endsAt !== null && timeRemaining > 0;
 
@@ -44,10 +47,14 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
       if (remaining <= 0) {
         setEndsAt(null);
         setNextLabel(null);
+        setIsComplete(true);
 
         if (typeof navigator !== "undefined" && "vibrate" in navigator) {
           navigator.vibrate([200, 100, 200]);
         }
+
+        if (completeTimeoutRef.current) clearTimeout(completeTimeoutRef.current);
+        completeTimeoutRef.current = setTimeout(() => setIsComplete(false), 3000);
       }
     };
 
@@ -62,7 +69,7 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [endsAt]);
 
-  const startTimer = (seconds: number, label?: string) => {
+  const startTimer = (seconds: number, label?: string | undefined) => {
     const safeSeconds = Math.max(0, Math.floor(seconds));
 
     if (safeSeconds <= 0) {
@@ -73,6 +80,8 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
+    if (completeTimeoutRef.current) clearTimeout(completeTimeoutRef.current);
+    setIsComplete(false);
     setDuration(safeSeconds);
     setTimeRemaining(safeSeconds);
     setEndsAt(Date.now() + safeSeconds * 1000);
@@ -102,12 +111,13 @@ export const RestTimerProvider: React.FC<{ children: React.ReactNode }> = ({
       timeRemaining,
       duration,
       isRunning,
+      isComplete,
       nextLabel,
       startTimer,
       addThirtySeconds,
       skipTimer,
     }),
-    [timeRemaining, duration, isRunning, nextLabel],
+    [timeRemaining, duration, isRunning, isComplete, nextLabel],
   );
 
   return (

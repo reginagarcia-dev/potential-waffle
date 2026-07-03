@@ -209,23 +209,6 @@ export const HistoryPage: React.FC = () => {
     });
   }
 
-  const getSessionVolume = (session: WorkoutSessionResponse) =>
-    session.exercises.reduce(
-      (acc, ex) =>
-        acc +
-        ex.sets.reduce(
-          (sum, s) =>
-            s.status === "completed" &&
-            s.type === "working" &&
-            s.weight &&
-            s.reps
-              ? sum + s.weight * s.reps
-              : sum,
-          0,
-        ),
-      0,
-    );
-
   const getSessionDuration = (session: WorkoutSessionResponse) => {
     if (!session.completedAt || !session.startedAt) return 0;
     return Math.max(
@@ -247,7 +230,6 @@ export const HistoryPage: React.FC = () => {
   }
 
   const renderSessionCard = (session: WorkoutSessionResponse) => {
-    const vol = getSessionVolume(session);
     const duration = getSessionDuration(session);
 
     return (
@@ -275,11 +257,6 @@ export const HistoryPage: React.FC = () => {
               <Dumbbell className="size-3.5" />
               {session.exercises.length} ex
             </span>
-            {vol > 0 && (
-              <span className="text-primary">
-                {vol.toLocaleString()} {session.unit}
-              </span>
-            )}
             <span className="font-normal text-muted-foreground">
               {new Date(session.completedAt!).toLocaleDateString(undefined, {
                 month: "short",

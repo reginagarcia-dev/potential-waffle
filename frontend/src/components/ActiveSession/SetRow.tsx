@@ -69,23 +69,30 @@ export const SetRow: React.FC<SetRowProps> = ({
       ? String(set.previousReps)
       : "—";
 
-  const pillBase =
-    "w-full justify-self-center rounded-full border px-3 py-2 text-center text-sm tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-ring";
+  const isWarmup = set.type === "warmup";
 
-  const weightPillStyle = weightHasValue
-    ? `${pillBase} border-primary/30 bg-primary/10 font-semibold text-foreground hover:border-primary/60 hover:bg-primary/15`
-    : set.previousWeight != null
-      ? `${pillBase} border-dashed border-border bg-card font-medium text-muted-foreground/50 hover:border-primary/50 hover:bg-primary/10 hover:text-muted-foreground`
-      : `${pillBase} border-border bg-card font-semibold text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-foreground`;
+  const pillBase = isWarmup
+    ? "w-full justify-self-center rounded-full border px-3 py-2 text-center text-sm tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-warmup"
+    : "w-full justify-self-center rounded-full border px-3 py-2 text-center text-sm tabular-nums transition-all focus:outline-none focus:ring-2 focus:ring-primary";
 
-  const repsPillStyle = repsHasValue
-    ? `${pillBase} border-primary/30 bg-primary/10 font-semibold text-foreground hover:border-primary/60 hover:bg-primary/15`
-    : set.previousReps != null
-      ? `${pillBase} border-dashed border-border bg-card font-medium text-muted-foreground/50 hover:border-primary/50 hover:bg-primary/10 hover:text-muted-foreground`
-      : `${pillBase} border-border bg-card font-semibold text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-foreground`;
+  const filledPill = isWarmup
+    ? `${pillBase} border-warmup/30 bg-warmup/10 font-semibold text-foreground hover:border-warmup/60 hover:bg-warmup/15`
+    : `${pillBase} border-primary/30 bg-primary/10 font-semibold text-foreground hover:border-primary/60 hover:bg-primary/15`;
 
-  const inlineInputClass =
-    "w-full justify-self-center rounded-full border border-primary bg-primary/10 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+  const ghostPill = isWarmup
+    ? `${pillBase} border-dashed border-border bg-card font-medium text-muted-foreground/50 hover:border-warmup/50 hover:bg-warmup/10 hover:text-muted-foreground`
+    : `${pillBase} border-dashed border-border bg-card font-medium text-muted-foreground/50 hover:border-primary/50 hover:bg-primary/10 hover:text-muted-foreground`;
+
+  const emptyPill = isWarmup
+    ? `${pillBase} border-border bg-card font-semibold text-muted-foreground hover:border-warmup/50 hover:bg-warmup/10 hover:text-foreground`
+    : `${pillBase} border-border bg-card font-semibold text-muted-foreground hover:border-primary/50 hover:bg-primary/10 hover:text-foreground`;
+
+  const weightPillStyle = weightHasValue ? filledPill : set.previousWeight != null ? ghostPill : emptyPill;
+  const repsPillStyle = repsHasValue ? filledPill : set.previousReps != null ? ghostPill : emptyPill;
+
+  const inlineInputClass = isWarmup
+    ? "w-full justify-self-center rounded-full border border-warmup bg-warmup/10 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-warmup"
+    : "w-full justify-self-center rounded-full border border-primary bg-primary/10 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground focus:outline-none focus:ring-2 focus:ring-primary";
 
   return (
     <div className="relative overflow-hidden rounded-xl">
@@ -119,6 +126,9 @@ export const SetRow: React.FC<SetRowProps> = ({
             >
               {displaySetNumber ?? set.setNumber}
             </span>
+          )}
+          {set.isPr && set.status === "completed" && (
+            <Award className="ml-1 size-3 fill-accent/20 text-accent" />
           )}
         </button>
 
@@ -172,15 +182,12 @@ export const SetRow: React.FC<SetRowProps> = ({
         )}
 
         {/* Complete toggle */}
-        <div className="flex items-center justify-center gap-1">
-          {set.isPr && set.status === "completed" && (
-            <Award className="size-3.5 fill-accent/10 text-accent" />
-          )}
+        <div className="flex items-center justify-center">
           <button
             type="button"
             onClick={onToggleComplete}
             aria-label={set.status === "completed" ? "Mark set incomplete" : "Complete set"}
-            className={`inline-flex size-7.5 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-ring ${
+            className={`inline-flex size-7.5 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 ${isWarmup ? "focus:ring-warmup" : "focus:ring-primary"} ${
               set.type === "warmup"
                 ? set.status === "completed"
                   ? "border-warmup bg-warmup/15 text-warmup"

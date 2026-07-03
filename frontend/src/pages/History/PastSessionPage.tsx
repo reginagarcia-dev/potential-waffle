@@ -12,6 +12,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { PRBadge } from "@/components/workout/PRBadge";
 import { WorkoutSessionResponse } from "shared";
 
 export const PastSessionPage: React.FC = () => {
@@ -91,16 +92,8 @@ export const PastSessionPage: React.FC = () => {
     0,
   );
 
-  const totalVolume = session.exercises.reduce(
-    (acc, ex) =>
-      acc +
-      ex.sets.reduce(
-        (sum, s) =>
-          s.status === "completed" && s.type === "working" && s.weight && s.reps
-            ? sum + s.weight * s.reps
-            : sum,
-        0,
-      ),
+  const prCount = session.exercises.reduce(
+    (acc, ex) => acc + ex.sets.filter((s) => s.isPr).length,
     0,
   );
 
@@ -179,10 +172,10 @@ export const PastSessionPage: React.FC = () => {
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <Award className="mx-auto size-5 text-muted-foreground" />
           <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Volume ({session.unit})
+            PRs
           </span>
           <span className="mt-1 block text-xl font-semibold tabular-nums text-primary">
-            {totalVolume.toLocaleString()}
+            {prCount}
           </span>
         </div>
       </div>
@@ -234,8 +227,9 @@ export const PastSessionPage: React.FC = () => {
                           key={set.id}
                           className="grid grid-cols-3 border-b border-border/40 py-1.5 text-sm text-foreground last:border-0"
                         >
-                          <span className="text-muted-foreground">
+                          <span className="flex items-center gap-3 text-muted-foreground">
                             {setLabel}
+                            {set.isPr && <PRBadge className="size-5 p-0.5" />}
                           </span>
                           <span className="text-right">
                             {set.weight}{" "}
