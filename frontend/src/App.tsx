@@ -19,7 +19,6 @@ import { PastSessionPage } from "./pages/History/PastSessionPage";
 import { ProgressPage } from "./pages/Progress/ProgressPage";
 import { SettingsPage } from "./pages/Settings/SettingsPage";
 import { PublicGuard } from "./components/Auth/PublicGuard";
-import { RestTimerProvider } from "./context/RestTimerContext";
 
 // Stable instance — must live outside the component so re-renders don't
 // create a new client and wipe the React Query cache mid-session.
@@ -29,7 +28,6 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <RestTimerProvider>
           <BrowserRouter>
             <ErrorBoundary>
             <Routes>
@@ -87,7 +85,6 @@ export default function App() {
             </Routes>
             </ErrorBoundary>
           </BrowserRouter>
-        </RestTimerProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

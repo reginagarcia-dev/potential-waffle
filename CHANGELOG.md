@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.8] - 2026-07-08
+
+### Added
+
+- Rest timer migrated from React Context to a Zustand store, fixing a stale-closure bug where "+30s" could strand a live countdown after the timer ended.
+- Rest-complete state now shows a full-screen modal with an animated progress ring (drawn in the app's primary colour) instead of the old auto-dismissing banner.
+- User is now signed out and redirected to `/login` immediately when the refresh token is confirmed invalid or expired, instead of silently keeping stale session state until the next failed request.
+
+### Fixed
+
+- Adding a new set no longer pre-fills real weight/reps from the previous set — values now stay blank (shown only as placeholder hints) so the "auto-complete on finish" logic can't record sets the user never entered.
+- `add_set` and `prefill_sets` mutations now verify the exercise belongs to the caller's session, matching every other session mutation.
+- `GET /sessions` no longer 500s on non-numeric `page`/`limit` query params — invalid values now fall back to sane defaults.
+- Concurrent token refresh calls (mount, tab-resume, and 401 retry) now share a single in-flight request instead of racing each other.
+- History page day selection no longer issues a redundant network request — it now filters the already-fetched month data client-side.
+
 ## [1.0.7] - 2026-07-03
 
 ### Changed

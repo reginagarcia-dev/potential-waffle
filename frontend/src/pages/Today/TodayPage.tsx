@@ -74,8 +74,6 @@ export function TodayPage() {
       0,
     );
 
-
-
   const handleStartWorkout = () => {
     navigate("/session/new");
   };

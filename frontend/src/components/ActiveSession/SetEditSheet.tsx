@@ -58,6 +58,25 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
     }
   }, [isOpen]);
 
+  // Guard against leaving the document inert if the active set is cleared
+  // while the native dialog is still open.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!set && dialog?.open) {
+      dialog.close();
+    }
+  }, [set]);
+
+  // Extra safety for route changes/unmount while modal is open.
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    return () => {
+      if (dialog?.open) {
+        dialog.close();
+      }
+    };
+  }, []);
+
   // Fallback backdrop click dismissal handler
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -152,7 +171,9 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
             <div className="rounded-xl border border-border bg-surface/80 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Weight</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    Weight
+                  </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Measured in {unit}
                   </p>
