@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.9] - 2026-07-08
+
+### Added
+
+- Start Workout now supports creating a session from a completed workout template (`sourceSessionId`), copying exercise/set structure with optional rename before launch.
+- New backend `createSessionSchema` validation for session creation payloads, including optional template source session IDs.
+- New shared `useModalDialog` hook for native `<dialog>` components to centralize open/close syncing and backdrop behavior.
+
+### Changed
+
+- Finishing a workout no longer auto-completes pending sets with values; only sets explicitly marked done are recorded as completed.
+- Adding a new set in active workouts now pre-fills weight/reps from the last same-type set (safe after removing finish-time auto-complete).
+- Rest-complete modal visuals were refined (larger progress ring and updated actions/icon sizing).
+
+### Fixed
+
+- Modal unmount cleanup now closes the currently mounted dialog instance, preventing document-inert/frozen-screen states when sheets unmount while open.
+- Active session and history delete/rename/settings/note/search/edit sheets now share consistent modal lifecycle behavior through the dialog hook.
+
 ## [1.0.8] - 2026-07-08
 
 ### Added

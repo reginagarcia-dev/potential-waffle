@@ -20,7 +20,7 @@ import {
   exerciseDefinitions,
   users,
 } from "../db/schema.js";
-import { sessionMutationSchema } from "shared";
+import { createSessionSchema, sessionMutationSchema } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
 import { convertWeight } from "shared";
 
@@ -166,17 +166,22 @@ sessionsRouter.get(
   },
 );
 
-// 4. POST /sessions (Creates database record immediately, status: active)
+// 4. POST /sessions (Creates database record immediately, status: active.
+//    Optionally copies the exercise/set structure of a past completed session.)
 sessionsRouter.post(
   "/",
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.userId!;
-      const { name, unit } = req.body;
 
-      if (!name || !unit) {
-        return res.status(400).json({ error: "Name and unit are required" });
+      const parseResult = createSessionSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res
+          .status(400)
+          .json({ error: parseResult.error.errors[0].message });
       }
+
+      const { name, unit, sourceSessionId } = parseResult.data;
 
       // Check if there is already an active session
       const existingActive = await db.query.workoutSessions.findFirst({
@@ -195,20 +200,139 @@ sessionsRouter.post(
           });
       }
 
-      const [newSession] = await db
-        .insert(workoutSessions)
-        .values({
-          userId,
-          name: name.trim(),
-          unit,
-          status: "active",
-        })
-        .returning();
+      const sourceSession = sourceSessionId
+        ? await db.query.workoutSessions.findFirst({
+            where: and(
+              eq(workoutSessions.id, sourceSessionId),
+              eq(workoutSessions.userId, userId),
+              eq(workoutSessions.status, "completed"),
+            ),
+            with: {
+              exercises: {
+                orderBy: (exercises, { asc }) => [asc(exercises.order)],
+                with: {
+                  sets: {
+                    orderBy: (sets, { asc }) => [asc(sets.setNumber)],
+                  },
+                },
+              },
+            },
+          })
+        : null;
 
-      return res.status(201).json({
-        ...newSession,
-        exercises: [],
+      if (sourceSessionId && !sourceSession) {
+        return res.status(404).json({ error: "Source workout not found" });
+      }
+
+      if (!sourceSession) {
+        const [newSession] = await db
+          .insert(workoutSessions)
+          .values({
+            userId,
+            name,
+            unit,
+            status: "active",
+          })
+          .returning();
+
+        return res.status(201).json({
+          ...newSession,
+          exercises: [],
+        });
+      }
+
+      // Copied weight in the new session's display unit plus its kg
+      // counterpart. Prefer the performed weight; fall back to the source
+      // set's own hint.
+      const toCopiedWeight = (set: {
+        weight: number | null;
+        weightKg: number | null;
+        previousWeight: number | null;
+      }): { weight: number | null; weightKg: number | null } => {
+        const sourceWeight = set.weight ?? set.previousWeight;
+        if (sourceWeight == null) {
+          return { weight: null, weightKg: null };
+        }
+
+        const weightKg =
+          set.weight != null && set.weightKg != null
+            ? set.weightKg
+            : convertWeight(sourceWeight, sourceSession.unit, "kg");
+
+        const weight =
+          sourceSession.unit === unit
+            ? sourceWeight
+            : unit === "kg"
+              ? weightKg
+              : convertWeight(weightKg, "kg", "lbs");
+
+        return { weight, weightKg };
+      };
+
+      const newSessionId = await db.transaction(async (tx) => {
+        const [newSession] = await tx
+          .insert(workoutSessions)
+          .values({
+            userId,
+            name,
+            unit,
+            status: "active",
+          })
+          .returning();
+
+        for (const exercise of sourceSession.exercises) {
+          const [sessionEx] = await tx
+            .insert(sessionExercises)
+            .values({
+              sessionId: newSession.id,
+              exerciseDefinitionId: exercise.exerciseDefinitionId,
+              nameSnapshot: exercise.nameSnapshot,
+              order: exercise.order,
+            })
+            .returning();
+
+          if (exercise.sets.length > 0) {
+            // Copied sets start pending with the source's values pre-filled.
+            // They stay pending until the user explicitly completes them —
+            // finishing a workout never auto-completes untouched sets.
+            await tx.insert(sets).values(
+              exercise.sets.map((s) => {
+                const { weight, weightKg } = toCopiedWeight(s);
+                const reps = s.reps ?? s.previousReps;
+                return {
+                  exerciseId: sessionEx.id,
+                  setNumber: s.setNumber,
+                  type: s.type,
+                  status: "pending" as const,
+                  weight,
+                  weightKg,
+                  reps,
+                  previousWeight: weight,
+                  previousReps: reps,
+                };
+              }),
+            );
+          }
+        }
+
+        return newSession.id;
       });
+
+      const fullSession = await db.query.workoutSessions.findFirst({
+        where: eq(workoutSessions.id, newSessionId),
+        with: {
+          exercises: {
+            orderBy: (exercises, { asc }) => [asc(exercises.order)],
+            with: {
+              sets: {
+                orderBy: (sets, { asc }) => [asc(sets.setNumber)],
+              },
+            },
+          },
+        },
+      });
+
+      return res.status(201).json(fullSession);
     } catch (error) {
       next(error);
     }
@@ -241,39 +365,17 @@ sessionsRouter.post(
           .json({ error: "Only active workouts can be finished" });
       }
 
-      await db.transaction(async (tx) => {
-        const exerciseRows = await tx
-          .select({ id: sessionExercises.id })
-          .from(sessionExercises)
-          .where(eq(sessionExercises.sessionId, sessionId));
-
-        // Auto-complete all pending sets that have values in one query
-        if (exerciseRows.length > 0) {
-          await tx
-            .update(sets)
-            .set({ status: "completed", completedAt: new Date() })
-            .where(
-              and(
-                inArray(
-                  sets.exerciseId,
-                  exerciseRows.map((e) => e.id),
-                ),
-                eq(sets.status, "pending"),
-                isNotNull(sets.weight),
-                isNotNull(sets.reps),
-              ),
-            );
-        }
-
-        await tx
-          .update(workoutSessions)
-          .set({
-            status: "completed",
-            completedAt: new Date(),
-            notes: notes || null,
-          })
-          .where(eq(workoutSessions.id, sessionId));
-      });
+      // Pending sets stay pending — only sets the user explicitly marked done
+      // count. Pre-filled values (copied workouts, added sets) must never be
+      // recorded as performed just because the workout was finished.
+      await db
+        .update(workoutSessions)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          notes: notes || null,
+        })
+        .where(eq(workoutSessions.id, sessionId));
 
       const fullSession = await db.query.workoutSessions.findFirst({
         where: eq(workoutSessions.id, sessionId),
@@ -501,19 +603,19 @@ sessionsRouter.patch(
             orderBy: [desc(sets.setNumber)],
           });
 
-          // Surface the last set's values as ghost hints only. weight/reps must
-          // stay null until the user enters them — the finish handler auto-completes
-          // any pending set with values, so pre-filling would fabricate logged sets.
+          // Pre-fill from the last set of the same type so new sets start
+          // ready to tick. Safe because finishing a workout never
+          // auto-completes pending sets.
           await db.insert(sets).values({
             exerciseId,
             setNumber: maxNum + 1,
             type: setType || "working",
             status: "pending",
-            weight: null,
-            weightKg: null,
-            reps: null,
-            previousWeight: lastSet?.weight ?? lastSet?.previousWeight ?? null,
-            previousReps: lastSet?.reps ?? lastSet?.previousReps ?? null,
+            weight: lastSet?.weight ?? null,
+            weightKg: lastSet?.weightKg ?? null,
+            reps: lastSet?.reps ?? null,
+            previousWeight: lastSet?.previousWeight ?? null,
+            previousReps: lastSet?.previousReps ?? null,
           });
           break;
         }

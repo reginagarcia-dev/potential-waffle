@@ -277,4 +277,142 @@ test.describe("Workout Tracker E2E Flows", () => {
     ).toBeVisible();
     await expect(page.getByLabel("Email Address")).toBeVisible();
   });
+
+  test("should copy a previous workout as a new session with rename", async ({
+    page,
+  }) => {
+    const pastWorkout = {
+      id: "session-past-uuid",
+      userId: "user-uuid-1234",
+      name: "Push Day",
+      status: "completed",
+      unit: "lbs",
+      notes: null,
+      startedAt: "2026-07-01T17:00:00.000Z",
+      completedAt: "2026-07-01T18:00:00.000Z",
+      exercises: [
+        {
+          id: "se-bench-past",
+          sessionId: "session-past-uuid",
+          exerciseDefinitionId: "ex-bench-id",
+          nameSnapshot: "Bench Press",
+          order: 1,
+          notes: null,
+          createdAt: "2026-07-01T17:00:00.000Z",
+          sets: [
+            {
+              id: "set-past-1",
+              exerciseId: "se-bench-past",
+              setNumber: 1,
+              type: "working",
+              status: "completed",
+              weight: 135,
+              weightKg: 61.23,
+              reps: 8,
+              rpe: null,
+              previousWeight: null,
+              previousReps: null,
+              isPr: false,
+              completedAt: "2026-07-01T17:10:00.000Z",
+            },
+          ],
+        },
+      ],
+    };
+
+    const copiedSession = {
+      id: "session-copied-uuid",
+      userId: "user-uuid-1234",
+      name: "Push Day v2",
+      status: "active",
+      unit: "lbs",
+      notes: null,
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      exercises: [
+        {
+          ...pastWorkout.exercises[0],
+          id: "se-bench-copy",
+          sessionId: "session-copied-uuid",
+          sets: [
+            {
+              id: "set-copy-1",
+              exerciseId: "se-bench-copy",
+              setNumber: 1,
+              type: "working",
+              status: "pending",
+              weight: 135,
+              weightKg: 61.23,
+              reps: 8,
+              rpe: null,
+              previousWeight: 135,
+              previousReps: 8,
+              isPr: false,
+              completedAt: null,
+            },
+          ],
+        },
+      ],
+    };
+
+    // Recent completed workouts for the Start-from dropdown
+    await page.route("**/sessions?page=1&limit=10", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([pastWorkout]),
+      });
+    });
+
+    // Capture the create payload and return the copied session
+    let createBody: Record<string, unknown> | null = null;
+    await page.route("**/sessions", async (route) => {
+      createBody = route.request().postDataJSON();
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify(copiedSession),
+      });
+    });
+
+    await page.route("**/sessions/session-copied-uuid", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(copiedSession),
+      });
+    });
+
+    await page.goto("/session/new");
+
+    // Pick the past workout — the name field pre-fills for optional rename
+    await page.locator("#start-from").selectOption("session-past-uuid");
+    const nameInput = page.locator("#workout-name");
+    await expect(nameInput).toHaveValue("Push Day");
+
+    await nameInput.fill("Push Day v2");
+
+    await page
+      .getByRole("button", { name: "Start Workout" })
+      .last()
+      .click();
+
+    // Lands in the new active session with the copied exercise structure
+    await expect(page).toHaveURL(/\/session\/session-copied-uuid$/);
+    await expect(page.locator("h1")).toContainText("Push Day v2");
+    await expect(
+      page.getByRole("heading", { name: "Bench Press" }),
+    ).toBeVisible();
+
+    // Copied weight is a real pre-filled value, not a gray placeholder
+    await expect(
+      page.locator("button", { hasText: "135" }).first(),
+    ).toBeVisible();
+
+    expect(createBody).toMatchObject({
+      name: "Push Day v2",
+      unit: "lbs",
+      sourceSessionId: "session-past-uuid",
+    });
+  });
 });

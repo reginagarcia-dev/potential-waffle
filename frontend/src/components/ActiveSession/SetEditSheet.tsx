@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { WorkoutSetResponse } from "shared";
 import { X, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductButton } from "../ui/ProductButton";
+import { useModalDialog } from "@/hooks/useModalDialog";
 
 interface SetEditSheetProps {
   isOpen: boolean;
@@ -24,7 +25,10 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const dialogRef = useModalDialog(isOpen, {
+    closeOnBackdropClick: true,
+    onClose,
+  });
 
   // Form states
   const [weight, setWeight] = useState<number | "">("");
@@ -42,22 +46,6 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
     }
   }, [set]);
 
-  // Handle open/close native dialog
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen) {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-    } else {
-      if (dialog.open) {
-        dialog.close();
-      }
-    }
-  }, [isOpen]);
-
   // Guard against leaving the document inert if the active set is cleared
   // while the native dialog is still open.
   useEffect(() => {
@@ -65,42 +53,7 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
     if (!set && dialog?.open) {
       dialog.close();
     }
-  }, [set]);
-
-  // Extra safety for route changes/unmount while modal is open.
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    return () => {
-      if (dialog?.open) {
-        dialog.close();
-      }
-    };
-  }, []);
-
-  // Fallback backdrop click dismissal handler
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const handleBackdropClick = (event: MouseEvent) => {
-      if (event.target === dialog) {
-        const rect = dialog.getBoundingClientRect();
-        const inside =
-          rect.top <= event.clientY &&
-          event.clientY <= rect.bottom &&
-          rect.left <= event.clientX &&
-          event.clientX <= rect.right;
-        if (!inside) {
-          onClose();
-        }
-      }
-    };
-
-    dialog.addEventListener("click", handleBackdropClick);
-    return () => {
-      dialog.removeEventListener("click", handleBackdropClick);
-    };
-  }, [onClose]);
+  }, [set, dialogRef]);
 
   if (!set) return null;
 

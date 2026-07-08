@@ -5,6 +5,7 @@ import { apiFetch } from "../../lib/api.js";
 import { cn } from "../../lib/utils";
 import { ExerciseDefinition, MuscleGroup } from "shared";
 import { ProductButton } from "@/components/ui/ProductButton";
+import { useModalDialog } from "@/hooks/useModalDialog";
 
 interface ExerciseSearchSheetProps {
   isOpen: boolean;
@@ -27,7 +28,10 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
   onClose,
   onSelectExercise,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const dialogRef = useModalDialog(isOpen, {
+    closeOnBackdropClick: true,
+    onClose,
+  });
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
 
@@ -46,48 +50,14 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
     useState<MuscleGroup>("push");
   const [customError, setCustomError] = useState<string | null>(null);
 
+  // Focus the search field once the dialog is open
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen) {
-      if (!dialog.open) {
-        dialog.showModal();
-      }
-
-      window.setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 0);
-    } else if (dialog.open) {
-      dialog.close();
-    }
+    if (!isOpen) return;
+    const id = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [isOpen]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const handleBackdropClick = (event: MouseEvent) => {
-      if (event.target !== dialog) return;
-
-      const rect = dialog.getBoundingClientRect();
-      const inside =
-        rect.top <= event.clientY &&
-        event.clientY <= rect.bottom &&
-        rect.left <= event.clientX &&
-        event.clientX <= rect.right;
-
-      if (!inside) {
-        onClose();
-      }
-    };
-
-    dialog.addEventListener("click", handleBackdropClick);
-
-    return () => {
-      dialog.removeEventListener("click", handleBackdropClick);
-    };
-  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) {

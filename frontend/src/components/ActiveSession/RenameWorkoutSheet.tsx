@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalDialog } from "@/hooks/useModalDialog";
 
 interface RenameWorkoutSheetProps {
   isOpen: boolean;
@@ -17,23 +18,12 @@ export const RenameWorkoutSheet: React.FC<RenameWorkoutSheetProps> = ({
   onSave,
   isPending = false,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const dialogRef = useModalDialog(isOpen);
   const [name, setName] = useState(currentName);
 
   useEffect(() => {
     setName(currentName);
   }, [currentName, isOpen]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen && !dialog.open) {
-      dialog.showModal();
-    } else if (!isOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [isOpen]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();

@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
+import { useModalDialog } from "@/hooks/useModalDialog";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -19,17 +20,7 @@ export const PastSessionPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const deleteDialogRef = useRef<HTMLDialogElement | null>(null);
-
-  useEffect(() => {
-    const dialog = deleteDialogRef.current;
-    if (!dialog) return;
-    if (isDeleteOpen && !dialog.open) {
-      dialog.showModal();
-    } else if (!isDeleteOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [isDeleteOpen]);
+  const deleteDialogRef = useModalDialog(isDeleteOpen);
 
   const {
     data: session,
