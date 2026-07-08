@@ -290,7 +290,7 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <div className="space-y-6 px-4">
-      <div className="sticky top-[env(safe-area-inset-top)] z-10 -mx-4 border-b border-border bg-background px-4 pt-6 pb-4">
+      <div className="sticky top-[env(safe-area-inset-top)] z-10 border-b border-border bg-background pt-6 pb-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -337,12 +337,16 @@ export const HistoryPage: React.FC = () => {
                   className={`flex items-center justify-between${idx > 0 ? " mt-4 border-t border-border pt-4" : ""}`}
                 >
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{pr.exerciseName}</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {pr.exerciseName}
+                    </p>
                     <p className="text-sm tabular-nums text-muted-foreground">
                       {pr.weight != null ? `${pr.weight} ${pr.unit}` : "—"}
                       {pr.reps ? ` × ${pr.reps} reps` : ""}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{pr.date}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {pr.date}
+                    </p>
                   </div>
                   <PRBadge />
                 </div>

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.10] - 2026-07-08
+
+### Fixed
+
+- Discarding a workout now immediately clears the active-session state shown on Today; the stale `Resume Workout` CTA no longer appears after redirect.
+- Active workout page now uses a session-specific React Query key (`["session", id]`) instead of sharing `activeSession`, preventing cache collisions between `/sessions/:id` and `/sessions/active`.
+- History page sticky header no longer introduces horizontal overflow from negative margins, preventing the bottom footer/nav from visually lifting when the workout list is long.
+
 ## [1.0.9] - 2026-07-08
 
 ### Added
