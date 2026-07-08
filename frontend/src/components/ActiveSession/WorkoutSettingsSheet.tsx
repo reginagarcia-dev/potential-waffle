@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalDialog } from "@/hooks/useModalDialog";
 
 interface WorkoutSettingsSheetProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export const WorkoutSettingsSheet: React.FC<WorkoutSettingsSheetProps> = ({
   onSave,
   isPending = false,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const dialogRef = useModalDialog(isOpen);
   const [selectedUnit, setSelectedUnit] = useState<"lbs" | "kg">(unit);
   const [restSeconds, setRestSeconds] = useState(defaultRestSeconds);
 
@@ -37,17 +38,6 @@ export const WorkoutSettingsSheet: React.FC<WorkoutSettingsSheetProps> = ({
     setSelectedUnit(unit);
     setRestSeconds(defaultRestSeconds);
   }, [unit, defaultRestSeconds, isOpen]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen && !dialog.open) {
-      dialog.showModal();
-    } else if (!isOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [isOpen]);
 
   return (
     <dialog

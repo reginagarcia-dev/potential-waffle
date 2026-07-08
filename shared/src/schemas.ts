@@ -21,6 +21,15 @@ export const updatePreferencesSchema = z.object({
 
 export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;
 
+export const createSessionSchema = z.object({
+  name: z.string().trim().min(1, 'Workout name is required'),
+  unit: z.enum(['lbs', 'kg']),
+  // Copy the exercise/set structure of one of the user's completed sessions
+  sourceSessionId: z.string().uuid().optional(),
+});
+
+export type CreateSessionInput = z.infer<typeof createSessionSchema>;
+
 // Session update discriminated commands
 export const renameSessionSchema = z.object({
   type: z.literal('rename_session'),

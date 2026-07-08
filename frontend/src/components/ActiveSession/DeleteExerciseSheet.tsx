@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalDialog } from "@/hooks/useModalDialog";
 
 interface DeleteExerciseSheetProps {
   isOpen: boolean;
@@ -15,17 +16,7 @@ export const DeleteExerciseSheet: React.FC<DeleteExerciseSheetProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const dialogRef = useRef<HTMLDialogElement | null>(null);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (isOpen && !dialog.open) {
-      dialog.showModal();
-    } else if (!isOpen && dialog.open) {
-      dialog.close();
-    }
-  }, [isOpen]);
+  const dialogRef = useModalDialog(isOpen);
 
   return (
     <dialog
