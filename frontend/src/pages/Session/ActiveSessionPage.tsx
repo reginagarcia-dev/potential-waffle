@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext.js";
 import { apiFetch } from "../../lib/api.js";
-import { useRestTimer } from "../../context/RestTimerContext.js";
+import { useRestTimerStore } from "../../stores/restTimerStore.js";
 import { WorkoutSessionResponse, WorkoutSetResponse } from "shared";
 import {
   ArrowLeft,
@@ -39,7 +39,7 @@ export function ActiveSessionPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { startTimer } = useRestTimer();
+  const startTimer = useRestTimerStore((s) => s.startTimer);
 
   // Dialog Overlays states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -88,21 +88,33 @@ export function ActiveSessionPage() {
       }),
     onMutate: async ({ setId, status }) => {
       await queryClient.cancelQueries({ queryKey: ["activeSession"] });
-      const previous = queryClient.getQueryData<WorkoutSessionResponse>(["activeSession"]);
-      queryClient.setQueryData<WorkoutSessionResponse>(["activeSession"], (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          exercises: old.exercises.map((ex) => ({
-            ...ex,
-            sets: ex.sets.map((s) =>
-              s.id === setId
-                ? { ...s, status, completedAt: status === "completed" ? new Date().toISOString() : null }
-                : s,
-            ),
-          })),
-        };
-      });
+      const previous = queryClient.getQueryData<WorkoutSessionResponse>([
+        "activeSession",
+      ]);
+      queryClient.setQueryData<WorkoutSessionResponse>(
+        ["activeSession"],
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            exercises: old.exercises.map((ex) => ({
+              ...ex,
+              sets: ex.sets.map((s) =>
+                s.id === setId
+                  ? {
+                      ...s,
+                      status,
+                      completedAt:
+                        status === "completed"
+                          ? new Date().toISOString()
+                          : null,
+                    }
+                  : s,
+              ),
+            })),
+          };
+        },
+      );
       return { previous };
     },
     onError: (_err, _vars, context) => {
@@ -193,7 +205,10 @@ export function ActiveSessionPage() {
           const currentIdx = parentExercise.sets.findIndex(
             (s) => s.id === set.id,
           );
-          if (currentIdx !== -1 && currentIdx + 1 < parentExercise.sets.length) {
+          if (
+            currentIdx !== -1 &&
+            currentIdx + 1 < parentExercise.sets.length
+          ) {
             nextSetMsg = `${parentExercise.nameSnapshot} — Set ${currentIdx + 2}`;
           } else {
             const nextExercise = session.exercises[parentExerciseIdx + 1];
@@ -242,15 +257,15 @@ export function ActiveSessionPage() {
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-56">
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between gap-2">
           <button
             onClick={() => navigate("/")}
-            className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             <ArrowLeft className="size-5" />
           </button>
 
-          <div className="text-center">
+          <div className="min-w-0 flex-1 text-center">
             {editingWorkoutName ? (
               <div className="flex items-center gap-2">
                 <input
@@ -267,17 +282,22 @@ export function ActiveSessionPage() {
                 </button>
               </div>
             ) : (
-              <h1 className="inline-flex items-center gap-1.5 text-lg font-semibold text-foreground">
+              <h1
+                className="block truncate text-lg font-semibold text-foreground"
+                title={session?.name ?? "Workout"}
+              >
                 {session?.name}
               </h1>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {session && <SessionTimer startedAt={session.startedAt} />}
 
             <button
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["activeSession"] })}
+              onClick={() =>
+                queryClient.invalidateQueries({ queryKey: ["activeSession"] })
+              }
               className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               aria-label="Refresh session"
             >
@@ -464,7 +484,8 @@ export function ActiveSessionPage() {
       <FinishWorkoutSheet
         isOpen={isFinishOpen}
         elapsedMinutes={Math.floor(
-          (Date.now() - new Date(session?.startedAt ?? Date.now()).getTime()) / 60000
+          (Date.now() - new Date(session?.startedAt ?? Date.now()).getTime()) /
+            60000,
         )}
         exercises={session?.exercises.length ?? 0}
         sets={

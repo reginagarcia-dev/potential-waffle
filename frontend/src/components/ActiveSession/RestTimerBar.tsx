@@ -1,16 +1,23 @@
 import React from "react";
-import { CheckCircle, Timer } from "lucide-react";
-import { useRestTimer } from "../../context/RestTimerContext.js";
+import { Check, Timer, X } from "lucide-react";
+import {
+  selectIsRunning,
+  useRestTimerStore,
+} from "../../stores/restTimerStore.js";
+
+const RING_SIZE = 180;
+const RING_STROKE = 10;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export const RestTimerBar: React.FC = () => {
-  const {
-    isRunning: isRestTimerRunning,
-    isComplete,
-    timeRemaining,
-    nextLabel,
-    skipTimer,
-    addThirtySeconds,
-  } = useRestTimer();
+  const isRestTimerRunning = useRestTimerStore(selectIsRunning);
+  const isComplete = useRestTimerStore((s) => s.isComplete);
+  const timeRemaining = useRestTimerStore((s) => s.timeRemaining);
+  const nextLabel = useRestTimerStore((s) => s.nextLabel);
+  const skipTimer = useRestTimerStore((s) => s.skipTimer);
+  const addThirtySeconds = useRestTimerStore((s) => s.addThirtySeconds);
+  const dismissComplete = useRestTimerStore((s) => s.dismissComplete);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -20,12 +27,76 @@ export const RestTimerBar: React.FC = () => {
 
   if (isComplete) {
     return (
-      <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3 shadow-bottomBar">
-        <div className="flex items-center gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-            <CheckCircle className="size-6" />
+      <div
+        className="fixed inset-0 z-70 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+        onClick={dismissComplete}
+      >
+        <div
+          className="w-full max-w-sm animate-pop-in rounded-3xl border border-primary/30 bg-card p-5 shadow-elevated motion-reduce:animate-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={dismissComplete}
+              aria-label="Dismiss rest complete modal"
+              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <X className="size-5" />
+            </button>
           </div>
-          <p className="text-base font-semibold text-primary">Rest complete!</p>
+
+          <div className="relative mx-auto my-4 size-45">
+            <svg
+              width={RING_SIZE}
+              height={RING_SIZE}
+              viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+              className="-rotate-90"
+              aria-hidden="true"
+            >
+              <circle
+                cx={RING_SIZE / 2}
+                cy={RING_SIZE / 2}
+                r={RING_RADIUS}
+                fill="none"
+                strokeWidth={RING_STROKE}
+                className="stroke-primary/15"
+              />
+              <circle
+                cx={RING_SIZE / 2}
+                cy={RING_SIZE / 2}
+                r={RING_RADIUS}
+                fill="none"
+                strokeWidth={RING_STROKE}
+                strokeLinecap="round"
+                strokeDasharray={RING_CIRCUMFERENCE}
+                className="animate-ring-draw stroke-primary motion-reduce:animate-none"
+                style={
+                  {
+                    "--ring-circumference": `${RING_CIRCUMFERENCE}px`,
+                  } as React.CSSProperties
+                }
+              />
+            </svg>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-7 text-center">
+              <Check className="mb-1.5 size-6 text-primary" />
+              <p className="text-xl font-semibold text-foreground">
+                Let&apos;s go!
+              </p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                {nextLabel ? `Next: ${nextLabel}` : "Time for your next set"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={dismissComplete}
+            className="mt-15 inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            Back to workout
+          </button>
         </div>
       </div>
     );

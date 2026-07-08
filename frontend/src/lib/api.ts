@@ -1,7 +1,8 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+const AUTH_SESSION_INVALIDATED_EVENT = "workout-tracker:session-invalidated";
 
 let accessToken: string | null = null;
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<RefreshResult> | null = null;
 
 export function getAccessToken() {
   return accessToken;
@@ -15,39 +16,88 @@ interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
-async function refreshTokens(): Promise<string | null> {
+interface RefreshResponse {
+  accessToken: string;
+  user: unknown;
+}
+
+type RefreshResult =
+  | { status: "success"; accessToken: string; user: unknown }
+  | { status: "unauthorized" }
+  | { status: "network-error" };
+
+function notifySessionInvalidated() {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(new Event(AUTH_SESSION_INVALIDATED_EVENT));
+}
+
+export function onSessionInvalidated(listener: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  window.addEventListener(AUTH_SESSION_INVALIDATED_EVENT, listener);
+  return () =>
+    window.removeEventListener(AUTH_SESSION_INVALIDATED_EVENT, listener);
+}
+
+async function requestRefresh(): Promise<RefreshResult> {
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
+      method: "POST",
+      credentials: "include",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     if (!res.ok) {
-      throw new Error('Refresh failed');
+      if (res.status === 401 || res.status === 403) {
+        setAccessToken(null);
+        notifySessionInvalidated();
+        return { status: "unauthorized" };
+      }
+
+      return { status: "network-error" };
     }
 
-    const data = await res.json();
+    const data: RefreshResponse = await res.json();
     setAccessToken(data.accessToken);
-    return data.accessToken;
-  } catch (error) {
-    setAccessToken(null);
-    return null;
+    return {
+      status: "success",
+      accessToken: data.accessToken,
+      user: data.user,
+    };
+  } catch {
+    return { status: "network-error" };
   }
 }
 
-export async function apiFetch(path: string, options: RequestOptions = {}): Promise<any> {
+// Single-flight refresh: concurrent callers (401 retries, tab-resume
+// re-auth) share one in-flight request instead of racing each other.
+export function refreshSession(): Promise<RefreshResult> {
+  if (!refreshPromise) {
+    refreshPromise = requestRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+export async function apiFetch(
+  path: string,
+  options: RequestOptions = {},
+): Promise<any> {
   const url = `${BASE_URL}${path}`;
-  
+
   // Set headers
   const headers = new Headers(options.headers || {});
   if (!options.skipAuth && accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`);
+    headers.set("Authorization", `Bearer ${accessToken}`);
   }
-  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
+  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
   }
 
   const fetchOptions: RequestInit = {
@@ -56,33 +106,31 @@ export async function apiFetch(path: string, options: RequestOptions = {}): Prom
   };
 
   // If credentials are required (for cookies)
-  fetchOptions.credentials = 'include';
+  fetchOptions.credentials = "include";
 
   let response = await fetch(url, fetchOptions);
 
   // If unauthorized and we haven't skipped auth, attempt token refresh
-  if ((response.status === 401 || response.status === 403) && !options.skipAuth) {
-    // Deduplicate concurrent refresh requests
-    if (!refreshPromise) {
-      refreshPromise = refreshTokens().finally(() => {
-        refreshPromise = null;
-      });
-    }
-
-    const newAccessToken = await refreshPromise;
-    if (newAccessToken) {
+  if (
+    (response.status === 401 || response.status === 403) &&
+    !options.skipAuth
+  ) {
+    const refreshed = await refreshSession();
+    if (refreshed.status === "success") {
       // Retry with new token
-      headers.set('Authorization', `Bearer ${newAccessToken}`);
+      headers.set("Authorization", `Bearer ${refreshed.accessToken}`);
       response = await fetch(url, fetchOptions);
-    } else {
-      // Refresh failed, clean token and let caller handle authorization error
-      setAccessToken(null);
     }
+    // Unauthorized refresh clears auth state through the session invalidated
+    // event. Network failures keep the current session in memory so the UI can
+    // retry once connectivity returns.
   }
 
   if (!response.ok) {
     const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.error || `HTTP error! status: ${response.status}`);
+    throw new Error(
+      errorBody.error || `HTTP error! status: ${response.status}`,
+    );
   }
 
   // Handle empty responses

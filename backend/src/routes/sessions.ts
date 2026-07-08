@@ -69,9 +69,9 @@ sessionsRouter.get(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.userId!;
-      const page = parseInt((req.query.page as string) || "1");
+      const page = Math.max(parseInt((req.query.page as string) || "1") || 1, 1);
       const limit = Math.min(
-        parseInt((req.query.limit as string) || "10"),
+        Math.max(parseInt((req.query.limit as string) || "10") || 10, 1),
         100,
       );
       const offset = (page - 1) * limit;
@@ -365,11 +365,10 @@ sessionsRouter.patch(
 
       switch (mutation.type) {
         case "rename_session": {
-          const [updated] = await db
+          await db
             .update(workoutSessions)
             .set({ name: mutation.name.trim() })
-            .where(eq(workoutSessions.id, sessionId))
-            .returning();
+            .where(eq(workoutSessions.id, sessionId));
           break;
         }
 
@@ -473,6 +472,17 @@ sessionsRouter.patch(
         case "add_set": {
           const { exerciseId, setType } = mutation;
 
+          const exercise = await db.query.sessionExercises.findFirst({
+            where: and(
+              eq(sessionExercises.id, exerciseId),
+              eq(sessionExercises.sessionId, sessionId),
+            ),
+          });
+
+          if (!exercise) {
+            return res.status(404).json({ error: "Exercise not found" });
+          }
+
           const maxSetRow = await db
             .select({ setNumber: sets.setNumber })
             .from(sets)
@@ -483,7 +493,6 @@ sessionsRouter.patch(
             0,
           );
 
-          // Copy weight/reps from the last set of the same type so new sets start pre-filled
           const lastSet = await db.query.sets.findFirst({
             where: and(
               eq(sets.exerciseId, exerciseId),
@@ -492,16 +501,19 @@ sessionsRouter.patch(
             orderBy: [desc(sets.setNumber)],
           });
 
+          // Surface the last set's values as ghost hints only. weight/reps must
+          // stay null until the user enters them — the finish handler auto-completes
+          // any pending set with values, so pre-filling would fabricate logged sets.
           await db.insert(sets).values({
             exerciseId,
             setNumber: maxNum + 1,
             type: setType || "working",
             status: "pending",
-            weight: lastSet?.weight ?? null,
-            weightKg: lastSet?.weightKg ?? null,
-            reps: lastSet?.reps ?? null,
-            previousWeight: lastSet?.previousWeight ?? null,
-            previousReps: lastSet?.previousReps ?? null,
+            weight: null,
+            weightKg: null,
+            reps: null,
+            previousWeight: lastSet?.weight ?? lastSet?.previousWeight ?? null,
+            previousReps: lastSet?.reps ?? lastSet?.previousReps ?? null,
           });
           break;
         }
@@ -661,6 +673,17 @@ sessionsRouter.patch(
 
         case "prefill_sets": {
           const { exerciseId, sets: newSets } = mutation;
+
+          const exercise = await db.query.sessionExercises.findFirst({
+            where: and(
+              eq(sessionExercises.id, exerciseId),
+              eq(sessionExercises.sessionId, sessionId),
+            ),
+          });
+
+          if (!exercise) {
+            return res.status(404).json({ error: "Exercise not found" });
+          }
 
           await db.transaction(async (tx) => {
             await tx.delete(sets).where(eq(sets.exerciseId, exerciseId));

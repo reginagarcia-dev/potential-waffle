@@ -57,35 +57,11 @@ export const HistoryPage: React.FC = () => {
     1,
   );
 
-  const selectedDayDate = selectedDayKey
-    ? (() => {
-        const [year, month, day] = selectedDayKey.split("-").map(Number);
-        return new Date(year, month - 1, day);
-      })()
-    : null;
-
   const { data: monthSessionsData = [], isPending: pendingMonth } = useQuery<
     WorkoutSessionResponse[]
   >({
     queryKey: ["workoutHistory", "month", viewedMonthKey],
     queryFn: () => apiFetch(buildSessionsPath(monthStart, monthEnd, 50)),
-    placeholderData: keepPreviousData,
-  });
-
-  const { data: daySessionsData = [], isPending: pendingDay } = useQuery<
-    WorkoutSessionResponse[]
-  >({
-    queryKey: ["workoutHistory", "day", selectedDayKey],
-    enabled: Boolean(selectedDayDate),
-    queryFn: () => {
-      const dayStart = selectedDayDate!;
-      const dayEnd = new Date(
-        dayStart.getFullYear(),
-        dayStart.getMonth(),
-        dayStart.getDate() + 1,
-      );
-      return apiFetch(buildSessionsPath(dayStart, dayEnd, 50));
-    },
     placeholderData: keepPreviousData,
   });
 
@@ -109,7 +85,14 @@ export const HistoryPage: React.FC = () => {
   const monthSessions = monthSessionsData.filter(
     (session) => session.completedAt,
   );
-  const daySessions = daySessionsData.filter((session) => session.completedAt);
+  // The month query already holds every session for the viewed month, so a
+  // selected day is a client-side filter — no extra request needed.
+  const daySessions = selectedDayKey
+    ? monthSessions.filter(
+        (session) =>
+          toDayKey(new Date(session.completedAt!)) === selectedDayKey,
+      )
+    : [];
   const completedSessions = prSourceSessions.filter(
     (session) => session.completedAt,
   );
@@ -117,9 +100,7 @@ export const HistoryPage: React.FC = () => {
     Boolean(session.completedAt),
   );
 
-  const isLoading = prOnly
-    ? pendingPr
-    : pendingMonth || pendingAny || (Boolean(selectedDayDate) && pendingDay);
+  const isLoading = prOnly ? pendingPr : pendingMonth || pendingAny;
 
   const hasPr = (session: WorkoutSessionResponse) =>
     session.exercises.some((ex) => ex.sets.some((s) => s.isPr));
