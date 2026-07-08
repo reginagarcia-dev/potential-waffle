@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.11] - 2026-07-08
+
+### Fixed
+
+- Workout complete summary now excludes warm-up sets from the total set count.
+- Set labels on workout summary details now keep working-set numbering sequential when warmups are present (`W`, `1`, `2`, ... instead of `W`, `2`, `3`, ...).
+- Active session bottom action stack now sits above the global footer/safe-area with extra scroll clearance so the set `Done` control is no longer covered.
+
 ## [1.0.10] - 2026-07-08
 
 ### Fixed

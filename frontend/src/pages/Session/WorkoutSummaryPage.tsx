@@ -89,16 +89,24 @@ export const WorkoutSummaryPage: React.FC = () => {
   };
 
   const setsCount = session.exercises.reduce((acc, ex) => {
-    return acc + ex.sets.filter((set) => set.status === "completed").length;
+    return (
+      acc +
+      ex.sets.filter(
+        (set) => set.status === "completed" && set.type !== "warmup",
+      ).length
+    );
   }, 0);
-
 
   const prList: Array<{ name: string; weight: number; reps: number }> = [];
 
   session.exercises.forEach((ex) => {
     ex.sets.forEach((set) => {
       if (set.isPr && set.weight && set.reps) {
-        prList.push({ name: ex.nameSnapshot, weight: set.weight, reps: set.reps });
+        prList.push({
+          name: ex.nameSnapshot,
+          weight: set.weight,
+          reps: set.reps,
+        });
       }
     });
   });
@@ -222,33 +230,43 @@ export const WorkoutSummaryPage: React.FC = () => {
                 {isExpanded && (
                   <div className="border-t border-border bg-surface/40 px-3 py-3">
                     <div className="space-y-2">
-                      {ex.sets.map((set, index) => (
-                        <div
-                          key={set.id}
-                          className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span
-                              className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                                set.type === "warmup"
-                                  ? "bg-muted text-muted-foreground"
-                                  : "bg-primary/10 text-primary"
-                              }`}
+                      {(() => {
+                        let workingSetNumber = 0;
+                        return ex.sets.map((set) => {
+                          const isWarmup = set.type === "warmup";
+                          const displayLabel = isWarmup
+                            ? "W"
+                            : String(++workingSetNumber);
+
+                          return (
+                            <div
+                              key={set.id}
+                              className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
                             >
-                              {set.type === "warmup" ? "W" : index + 1}
-                            </span>
+                              <div className="flex min-w-0 items-center gap-3">
+                                <span
+                                  className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                    isWarmup
+                                      ? "bg-muted text-muted-foreground"
+                                      : "bg-primary/10 text-primary"
+                                  }`}
+                                >
+                                  {displayLabel}
+                                </span>
 
-                            <span className="truncate text-sm font-semibold tabular-nums text-foreground">
-                              {set.weight ?? "—"} {session.unit} ×{" "}
-                              {set.reps ?? "—"}
-                            </span>
-                          </div>
+                                <span className="truncate text-sm font-semibold tabular-nums text-foreground">
+                                  {set.weight ?? "—"} {session.unit} ×{" "}
+                                  {set.reps ?? "—"}
+                                </span>
+                              </div>
 
-                          <div className="flex shrink-0 items-center gap-2">
-                            {set.isPr && <PRBadge />}
-                          </div>
-                        </div>
-                      ))}
+                              <div className="flex shrink-0 items-center gap-2">
+                                {set.isPr && <PRBadge />}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 )}
