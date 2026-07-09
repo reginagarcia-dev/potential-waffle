@@ -45,14 +45,21 @@ export const StartWorkoutPage: React.FC = () => {
   };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    new Date(iso).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
 
   const countSets = (session: WorkoutSessionResponse) =>
     session.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
 
   // Mutation to start the workout session
   const startSessionMutation = useMutation({
-    mutationFn: (body: { name: string; unit: string; sourceSessionId?: string }) =>
+    mutationFn: (body: {
+      name: string;
+      unit: string;
+      sourceSessionId?: string;
+    }) =>
       apiFetch("/sessions", {
         method: "POST",
         body: JSON.stringify(body),
@@ -166,7 +173,7 @@ export const StartWorkoutPage: React.FC = () => {
               {sourceSessionId && (
                 <p className="mt-3 text-xs text-muted-foreground">
                   Copies this workout's exercises with weights and reps
-                  pre-filled — adjust as needed, then mark each set done.
+                  pre-filled. Adjust as needed, then mark sets done.
                 </p>
               )}
             </section>

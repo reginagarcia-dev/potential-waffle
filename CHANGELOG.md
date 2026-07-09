@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.12] - 2026-07-08
+
+### Changed
+
+- Past workout details now use the same 3-dot actions menu as active workouts, with options to Rename Workout, Add Workout Note, and Discard Workout.
+- Completed workouts now allow safe metadata edits (`rename_session`, `update_session_notes`) while keeping structural workout mutations blocked unless the session is active.
+- Copied workouts now create pre-filled sets as pending (not completed), so users must explicitly mark sets done.
+
+### Fixed
+
+- Renaming a workout now rejects whitespace-only names via trimmed schema validation.
+- Auth refresh now retries once on transient 401/403 responses before invalidating the session, reducing random logout events from intermittent failures.
+- Added e2e regression coverage for copied-workout finish persistence flow.
+
+## [1.0.11] - 2026-07-08
+
+### Fixed
+
+- Workout complete summary now excludes warm-up sets from the total set count.
+- Set labels on workout summary details now keep working-set numbering sequential when warmups are present (`W`, `1`, `2`, ... instead of `W`, `2`, `3`, ...).
+- Active session bottom action stack now sits above the global footer/safe-area with extra scroll clearance so the set `Done` control is no longer covered.
+
+## [1.0.10] - 2026-07-08
+
+### Fixed
+
+- Discarding a workout now immediately clears the active-session state shown on Today; the stale `Resume Workout` CTA no longer appears after redirect.
+- Active workout page now uses a session-specific React Query key (`["session", id]`) instead of sharing `activeSession`, preventing cache collisions between `/sessions/:id` and `/sessions/active`.
+- History page sticky header no longer introduces horizontal overflow from negative margins, preventing the bottom footer/nav from visually lifting when the workout list is long.
+
 ## [1.0.9] - 2026-07-08
 
 ### Added

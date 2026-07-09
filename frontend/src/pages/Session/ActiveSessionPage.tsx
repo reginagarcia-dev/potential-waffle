@@ -36,6 +36,7 @@ export function ActiveSessionPage() {
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   const { id } = useParams<{ id: string }>();
+  const sessionQueryKey = ["session", id] as const;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export function ActiveSessionPage() {
 
   // 1. Fetch active session query
   const { data: session } = useQuery<WorkoutSessionResponse>({
-    queryKey: ["activeSession"],
+    queryKey: sessionQueryKey,
     queryFn: () => apiFetch(`/sessions/${id}`),
     // Re-verify the session status, if it's completed, redirect to summary
     refetchOnWindowFocus: false,
@@ -74,8 +75,9 @@ export function ActiveSessionPage() {
         body: JSON.stringify(payload),
       }),
     onSuccess: (updatedSession) => {
+      queryClient.setQueryData(sessionQueryKey, updatedSession);
       queryClient.setQueryData(["activeSession"], updatedSession);
-      queryClient.invalidateQueries({ queryKey: ["activeSession"] });
+      queryClient.invalidateQueries({ queryKey: sessionQueryKey });
     },
   });
 
@@ -87,12 +89,11 @@ export function ActiveSessionPage() {
         body: JSON.stringify({ type: "update_set", ...payload }),
       }),
     onMutate: async ({ setId, status }) => {
-      await queryClient.cancelQueries({ queryKey: ["activeSession"] });
-      const previous = queryClient.getQueryData<WorkoutSessionResponse>([
-        "activeSession",
-      ]);
+      await queryClient.cancelQueries({ queryKey: sessionQueryKey });
+      const previous =
+        queryClient.getQueryData<WorkoutSessionResponse>(sessionQueryKey);
       queryClient.setQueryData<WorkoutSessionResponse>(
-        ["activeSession"],
+        sessionQueryKey,
         (old) => {
           if (!old) return old;
           return {
@@ -119,11 +120,11 @@ export function ActiveSessionPage() {
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["activeSession"], context.previous);
+        queryClient.setQueryData(sessionQueryKey, context.previous);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["activeSession"] });
+      queryClient.invalidateQueries({ queryKey: sessionQueryKey });
     },
   });
 
@@ -228,6 +229,7 @@ export function ActiveSessionPage() {
         body: JSON.stringify({ notes }),
       }),
     onSuccess: () => {
+      queryClient.removeQueries({ queryKey: sessionQueryKey });
       queryClient.setQueryData(["activeSession"], null);
       queryClient.invalidateQueries({ queryKey: ["activeSession"] });
       queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
@@ -239,6 +241,7 @@ export function ActiveSessionPage() {
   const abandonSessionMutation = useMutation({
     mutationFn: () => apiFetch(`/sessions/${id}/abandon`, { method: "POST" }),
     onSuccess: () => {
+      queryClient.removeQueries({ queryKey: sessionQueryKey });
       queryClient.setQueryData(["activeSession"], null);
       queryClient.invalidateQueries({ queryKey: ["activeSession"] });
       navigate("/");
@@ -256,7 +259,7 @@ export function ActiveSessionPage() {
   };
   return (
     <>
-      <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-56">
+      <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-[calc(16rem+env(safe-area-inset-bottom))]">
         <header className="flex items-center justify-between gap-2">
           <button
             onClick={() => navigate("/")}
@@ -296,7 +299,7 @@ export function ActiveSessionPage() {
 
             <button
               onClick={() =>
-                queryClient.invalidateQueries({ queryKey: ["activeSession"] })
+                queryClient.invalidateQueries({ queryKey: sessionQueryKey })
               }
               className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               aria-label="Refresh session"
@@ -387,7 +390,7 @@ export function ActiveSessionPage() {
         >
           Finish Workout
         </ProductButton> */}
-        <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4 pb-4">
+        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 mx-auto w-full max-w-md px-4 pb-4">
           <div className="space-y-3">
             <RestTimerBar />
 
@@ -491,7 +494,10 @@ export function ActiveSessionPage() {
         sets={
           session?.exercises.reduce(
             (acc, ex) =>
-              acc + ex.sets.filter((s) => s.status === "completed").length,
+              acc +
+              ex.sets.filter(
+                (s) => s.status === "completed" && s.type !== "warmup",
+              ).length,
             0,
           ) ?? 0
         }

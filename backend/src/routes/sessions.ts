@@ -69,7 +69,10 @@ sessionsRouter.get(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const userId = req.userId!;
-      const page = Math.max(parseInt((req.query.page as string) || "1") || 1, 1);
+      const page = Math.max(
+        parseInt((req.query.page as string) || "1") || 1,
+        1,
+      );
       const limit = Math.min(
         Math.max(parseInt((req.query.limit as string) || "10") || 10, 1),
         100,
@@ -192,12 +195,10 @@ sessionsRouter.post(
       });
 
       if (existingActive) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "An active session is already in progress. Finish or abandon it first.",
-          });
+        return res.status(400).json({
+          error:
+            "An active session is already in progress. Finish or abandon it first.",
+        });
       }
 
       const sourceSession = sourceSessionId
@@ -292,9 +293,8 @@ sessionsRouter.post(
             .returning();
 
           if (exercise.sets.length > 0) {
-            // Copied sets start pending with the source's values pre-filled.
-            // They stay pending until the user explicitly completes them —
-            // finishing a workout never auto-completes untouched sets.
+            // Copy source values into editable pending sets so they show as
+            // prefilled, but still require explicit completion by the user.
             await tx.insert(sets).values(
               exercise.sets.map((s) => {
                 const { weight, weightKg } = toCopiedWeight(s);
@@ -309,6 +309,7 @@ sessionsRouter.post(
                   reps,
                   previousWeight: weight,
                   previousReps: reps,
+                  completedAt: null,
                 };
               }),
             );
@@ -450,12 +451,6 @@ sessionsRouter.patch(
         return res.status(404).json({ error: "Workout session not found" });
       }
 
-      if (session.status !== "active") {
-        return res
-          .status(400)
-          .json({ error: "Cannot mutate a completed or abandoned session" });
-      }
-
       const parseResult = sessionMutationSchema.safeParse(req.body);
       if (!parseResult.success) {
         return res
@@ -464,6 +459,22 @@ sessionsRouter.patch(
       }
 
       const mutation = parseResult.data;
+
+      const allowsCompletedMutation =
+        mutation.type === "rename_session" ||
+        mutation.type === "update_session_notes";
+
+      if (session.status !== "active" && !allowsCompletedMutation) {
+        return res
+          .status(400)
+          .json({ error: "Cannot mutate a completed or abandoned session" });
+      }
+
+      if (session.status === "abandoned" && allowsCompletedMutation) {
+        return res
+          .status(400)
+          .json({ error: "Cannot mutate an abandoned session" });
+      }
 
       switch (mutation.type) {
         case "rename_session": {
