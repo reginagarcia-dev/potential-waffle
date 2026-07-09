@@ -42,7 +42,7 @@ export function onSessionInvalidated(listener: () => void) {
     window.removeEventListener(AUTH_SESSION_INVALIDATED_EVENT, listener);
 }
 
-async function requestRefresh(): Promise<RefreshResult> {
+async function requestRefresh(attempt = 1): Promise<RefreshResult> {
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
@@ -54,6 +54,13 @@ async function requestRefresh(): Promise<RefreshResult> {
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
+        // Some environments can produce intermittent unauthorized refresh
+        // responses (cookie timing, transient infra blips). Confirm once more
+        // before clearing local auth state.
+        if (attempt < 2) {
+          return requestRefresh(attempt + 1);
+        }
+
         setAccessToken(null);
         notifySessionInvalidated();
         return { status: "unauthorized" };

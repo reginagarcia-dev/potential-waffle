@@ -2,25 +2,29 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
-import { useModalDialog } from "@/hooks/useModalDialog";
 import {
-  AlertTriangle,
   ArrowLeft,
   Clock,
   Dumbbell,
   Calendar,
+  FileText,
+  Pencil,
   Trash2,
-  X,
 } from "lucide-react";
 import { PRBadge } from "@/components/workout/PRBadge";
+import RenameWorkoutSheet from "@/components/ActiveSession/RenameWorkoutSheet";
+import WorkoutNoteSheet from "@/components/ActiveSession/WorkoutNoteSheet";
+import DiscardWorkoutSheet from "@/components/ActiveSession/DiscardWorkoutSheet";
+import { EllipsisMenu } from "@/components/ui/EllipsisMenu";
 import { WorkoutSessionResponse } from "shared";
 
 export const PastSessionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const deleteDialogRef = useModalDialog(isDeleteOpen);
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   const {
     data: session,
@@ -37,6 +41,24 @@ export const PastSessionPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["workoutHistory"] });
       queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
       navigate("/history");
+    },
+  });
+
+  const updateSessionMutation = useMutation({
+    mutationFn: (
+      payload:
+        | { type: "rename_session"; name: string }
+        | { type: "update_session_notes"; notes: string },
+    ) =>
+      apiFetch(`/sessions/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: (updatedSession) => {
+      queryClient.setQueryData(["pastSession", id], updatedSession);
+      queryClient.invalidateQueries({ queryKey: ["workoutHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
+      queryClient.invalidateQueries({ queryKey: ["sessionSummary", id] });
     },
   });
 
@@ -118,13 +140,32 @@ export const PastSessionPage: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsDeleteOpen(true)}
-          className="inline-flex size-10 items-center justify-center rounded-full text-danger/70 transition hover:bg-danger/10 hover:text-danger"
-        >
-          <Trash2 className="size-5" />
-        </button>
+        <EllipsisMenu
+          ariaLabel="Open workout options"
+          items={[
+            {
+              label: "Rename Workout",
+              icon: <Pencil className="size-4" />,
+              onClick: () => setIsRenameOpen(true),
+              disabled:
+                updateSessionMutation.isPending || deleteMutation.isPending,
+            },
+            {
+              label: "Add Workout Note",
+              icon: <FileText className="size-4" />,
+              onClick: () => setIsNoteOpen(true),
+              disabled:
+                updateSessionMutation.isPending || deleteMutation.isPending,
+            },
+            {
+              label: "Discard Workout",
+              icon: <Trash2 className="size-4 text-danger" />,
+              destructive: true,
+              onClick: () => setIsDiscardOpen(true),
+              disabled: deleteMutation.isPending,
+            },
+          ]}
+        />
       </div>
 
       {/* Summary Cards */}
@@ -247,64 +288,38 @@ export const PastSessionPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Delete workout confirmation */}
-      <dialog
-        ref={deleteDialogRef}
-        onClose={() => setIsDeleteOpen(false)}
-        className="m-auto w-[min(100%-2rem,26rem)] max-w-md rounded-2xl border border-border bg-card p-0 text-foreground shadow-elevated backdrop:bg-black/60 backdrop:backdrop-blur-sm overflow-hidden focus:outline-none"
-      >
-        <div className="px-5 pt-4">
-          <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
+      <RenameWorkoutSheet
+        isOpen={isRenameOpen}
+        currentName={session.name}
+        onClose={() => setIsRenameOpen(false)}
+        onSave={(name) => {
+          updateSessionMutation.mutate({ type: "rename_session", name });
+          setIsRenameOpen(false);
+        }}
+        isPending={updateSessionMutation.isPending}
+      />
 
-          <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
-            <div className="flex gap-3">
-              <div className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-danger/30 bg-danger/10 text-danger">
-                <AlertTriangle className="size-5" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                  Delete Workout?
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  This will permanently delete{" "}
-                  <span className="font-semibold text-foreground">
-                    {session.name}
-                  </span>{" "}
-                  from your history.
-                </p>
-              </div>
-            </div>
+      <WorkoutNoteSheet
+        isOpen={isNoteOpen}
+        currentNote={session.notes}
+        onClose={() => setIsNoteOpen(false)}
+        onSave={(notes) => {
+          updateSessionMutation.mutate({ type: "update_session_notes", notes });
+          setIsNoteOpen(false);
+        }}
+        isPending={updateSessionMutation.isPending}
+      />
 
-            <button
-              type="button"
-              onClick={() => setIsDeleteOpen(false)}
-              aria-label="Close"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <X className="size-5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-3 px-5 py-5">
-          <button
-            type="button"
-            disabled={deleteMutation.isPending}
-            onClick={() => deleteMutation.mutate()}
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-danger px-4 text-base font-semibold text-primary-foreground transition hover:bg-danger/90 active:bg-danger/80 disabled:pointer-events-none disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {deleteMutation.isPending ? "Deleting..." : "Delete Workout"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsDeleteOpen(false)}
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            Keep Workout
-          </button>
-        </div>
-      </dialog>
+      <DiscardWorkoutSheet
+        isOpen={isDiscardOpen}
+        workoutName={session.name}
+        onClose={() => setIsDiscardOpen(false)}
+        onDiscard={() => {
+          setIsDiscardOpen(false);
+          deleteMutation.mutate();
+        }}
+        isPending={deleteMutation.isPending}
+      />
     </div>
   );
 };

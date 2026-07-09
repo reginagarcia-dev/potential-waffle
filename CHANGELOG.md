@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.12] - 2026-07-08
+
+### Changed
+
+- Past workout details now use the same 3-dot actions menu as active workouts, with options to Rename Workout, Add Workout Note, and Discard Workout.
+- Completed workouts now allow safe metadata edits (`rename_session`, `update_session_notes`) while keeping structural workout mutations blocked unless the session is active.
+- Copied workouts now create pre-filled sets as pending (not completed), so users must explicitly mark sets done.
+
+### Fixed
+
+- Renaming a workout now rejects whitespace-only names via trimmed schema validation.
+- Auth refresh now retries once on transient 401/403 responses before invalidating the session, reducing random logout events from intermittent failures.
+- Added e2e regression coverage for copied-workout finish persistence flow.
+
 ## [1.0.11] - 2026-07-08
 
 ### Fixed

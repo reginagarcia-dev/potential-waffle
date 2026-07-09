@@ -340,7 +340,7 @@ test.describe("Workout Tracker E2E Flows", () => {
               exerciseId: "se-bench-copy",
               setNumber: 1,
               type: "working",
-              status: "pending",
+              status: "completed",
               weight: 135,
               weightKg: 61.23,
               reps: 8,
@@ -348,7 +348,7 @@ test.describe("Workout Tracker E2E Flows", () => {
               previousWeight: 135,
               previousReps: 8,
               isPr: false,
-              completedAt: null,
+              completedAt: new Date().toISOString(),
             },
           ],
         },
@@ -392,10 +392,7 @@ test.describe("Workout Tracker E2E Flows", () => {
 
     await nameInput.fill("Push Day v2");
 
-    await page
-      .getByRole("button", { name: "Start Workout" })
-      .last()
-      .click();
+    await page.getByRole("button", { name: "Start Workout" }).last().click();
 
     // Lands in the new active session with the copied exercise structure
     await expect(page).toHaveURL(/\/session\/session-copied-uuid$/);
@@ -414,5 +411,181 @@ test.describe("Workout Tracker E2E Flows", () => {
       unit: "lbs",
       sourceSessionId: "session-past-uuid",
     });
+  });
+
+  test("should preserve copied sets when finishing immediately", async ({
+    page,
+  }) => {
+    const nowIso = new Date().toISOString();
+    let didFinishSession = false;
+
+    const pastWorkout = {
+      id: "session-past-template-uuid",
+      userId: "user-uuid-1234",
+      name: "Upper A",
+      status: "completed",
+      unit: "lbs",
+      notes: null,
+      startedAt: "2026-07-02T17:00:00.000Z",
+      completedAt: "2026-07-02T17:50:00.000Z",
+      exercises: [
+        {
+          id: "se-upper-past",
+          sessionId: "session-past-template-uuid",
+          exerciseDefinitionId: "ex-bench-id",
+          nameSnapshot: "Bench Press",
+          order: 1,
+          notes: null,
+          createdAt: "2026-07-02T17:00:00.000Z",
+          sets: [
+            {
+              id: "set-upper-past-1",
+              exerciseId: "se-upper-past",
+              setNumber: 1,
+              type: "working",
+              status: "completed",
+              weight: 155,
+              weightKg: 70.31,
+              reps: 6,
+              rpe: null,
+              previousWeight: null,
+              previousReps: null,
+              isPr: false,
+              completedAt: "2026-07-02T17:10:00.000Z",
+            },
+          ],
+        },
+      ],
+    };
+
+    const copiedSessionActive = {
+      id: "session-copied-finish-uuid",
+      userId: "user-uuid-1234",
+      name: "Upper A Copy",
+      status: "active",
+      unit: "lbs",
+      notes: null,
+      startedAt: nowIso,
+      completedAt: null,
+      exercises: [
+        {
+          ...pastWorkout.exercises[0],
+          id: "se-upper-copy",
+          sessionId: "session-copied-finish-uuid",
+          sets: [
+            {
+              id: "set-upper-copy-1",
+              exerciseId: "se-upper-copy",
+              setNumber: 1,
+              type: "working",
+              status: "completed",
+              weight: 155,
+              weightKg: 70.31,
+              reps: 6,
+              rpe: null,
+              previousWeight: 155,
+              previousReps: 6,
+              isPr: false,
+              completedAt: nowIso,
+            },
+          ],
+        },
+      ],
+    };
+
+    const copiedSessionCompleted = {
+      ...copiedSessionActive,
+      status: "completed",
+      completedAt: nowIso,
+    };
+
+    await page.route("**/sessions?page=1&limit=10", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([pastWorkout]),
+      });
+    });
+
+    await page.route("**/sessions?page=1&limit=1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([copiedSessionCompleted]),
+      });
+    });
+
+    await page.route("**/sessions?page=1&limit=50*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([copiedSessionCompleted]),
+      });
+    });
+
+    await page.route("**/sessions", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify(copiedSessionActive),
+        });
+        return;
+      }
+
+      await route.fallback();
+    });
+
+    await page.route(
+      "**/sessions/session-copied-finish-uuid/finish",
+      async (route) => {
+        didFinishSession = true;
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(copiedSessionCompleted),
+        });
+      },
+    );
+
+    await page.route(
+      "**/sessions/session-copied-finish-uuid",
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            didFinishSession ? copiedSessionCompleted : copiedSessionActive,
+          ),
+        });
+      },
+    );
+
+    await page.goto("/session/new");
+
+    await page
+      .locator("#start-from")
+      .selectOption("session-past-template-uuid");
+    await page.locator("#workout-name").fill("Upper A Copy");
+    await page.getByRole("button", { name: "Start Workout" }).last().click();
+
+    await expect(page).toHaveURL(/\/session\/session-copied-finish-uuid$/);
+    await expect(
+      page.getByRole("heading", { name: "Bench Press" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Finish Workout" }).first().click();
+    await expect(
+      page.getByRole("heading", { name: "Finish Workout" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Finish Workout" }).last().click();
+
+    await expect(page).toHaveURL(
+      /\/session\/session-copied-finish-uuid\/summary$/,
+    );
+    await expect(page.getByText("155 × 6", { exact: false })).toBeVisible();
+
+    await page.goto("/history");
+    await expect(page.getByText("Upper A Copy")).toBeVisible();
   });
 });
