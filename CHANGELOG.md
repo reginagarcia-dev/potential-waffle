@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] - 2026-07-08
+
+### Fixed
+
+- Rest timer "Next" label now shows only the exercise name and no longer appends a set suffix like `-- Set 4`.
+
 ## [1.0.12] - 2026-07-08
 
 ### Changed

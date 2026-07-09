@@ -195,7 +195,8 @@ export function ActiveSessionPage() {
     if (nextStatus === "completed" && set.type === "working") {
       const restTime = user?.defaultRestSeconds || 180;
 
-      // Look up next set or next exercise
+      // Look up the next target exercise label for the rest bar.
+      // Keep it exercise-only (no "Set N" suffix) for cleaner copy.
       let nextSetMsg: string | undefined;
       if (session) {
         const parentExerciseIdx = session.exercises.findIndex((ex) =>
@@ -210,7 +211,7 @@ export function ActiveSessionPage() {
             currentIdx !== -1 &&
             currentIdx + 1 < parentExercise.sets.length
           ) {
-            nextSetMsg = `${parentExercise.nameSnapshot} — Set ${currentIdx + 2}`;
+            nextSetMsg = parentExercise.nameSnapshot;
           } else {
             const nextExercise = session.exercises[parentExerciseIdx + 1];
             nextSetMsg = nextExercise?.nameSnapshot;
