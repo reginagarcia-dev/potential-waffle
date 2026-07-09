@@ -107,6 +107,26 @@ export const HistoryPage: React.FC = () => {
 
   const prSessions = completedSessions.filter(hasPr);
 
+  const formatHistoryTimestamp = (iso: string) => {
+    const date = new Date(iso);
+    const datePart = date.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "long",
+      day: "2-digit",
+      year: "numeric",
+    });
+    const timePart = date
+      .toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .replace(" ", "")
+      .toLowerCase();
+
+    return `${datePart} ${timePart}`;
+  };
+
   const prEntries = prSessions.flatMap((session) =>
     session.exercises.flatMap((ex) =>
       ex.sets
@@ -118,10 +138,7 @@ export const HistoryPage: React.FC = () => {
           reps: s.reps,
           unit: session.unit,
           date: session.completedAt
-            ? new Date(session.completedAt).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })
+            ? formatHistoryTimestamp(session.completedAt)
             : "",
         })),
     ),
@@ -260,10 +277,7 @@ export const HistoryPage: React.FC = () => {
               {session.exercises.length} ex
             </span>
             <span className="font-normal text-muted-foreground">
-              {new Date(session.completedAt!).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })}
+              {formatHistoryTimestamp(session.completedAt!)}
             </span>
           </div>
         </div>
