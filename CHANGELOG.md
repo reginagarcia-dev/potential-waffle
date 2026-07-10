@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] - 2026-07-10
+
+### Fixed
+
+- Resolved random logout caused by the refresh-token cookie being blocked as a cross-site cookie in production; API requests now proxy through the frontend's own origin so the cookie is first-party.
+- Session refresh now retries with backoff on network/cold-start failures instead of treating them as an invalid session, so a slow-to-wake backend no longer looks like a logout.
+- Fixed exercise/workout/measurement text sanitization silently deleting bracketed input (e.g. `<b>`) and leaving raw HTML entities in stored names and notes.
+
+### Changed
+
+- Frontend auth and session-mutation payloads are now typed directly from the shared zod schemas instead of hand-duplicated TypeScript types, keeping client and server validation in sync.
+
+### Added
+
+- Backend test coverage (vitest + supertest) for the sanitize utility and route-level input validation guards.
+
 ## [1.0.12] - 2026-07-08
 
 ### Changed

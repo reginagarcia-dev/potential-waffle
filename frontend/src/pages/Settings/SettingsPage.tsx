@@ -17,7 +17,10 @@ export const SettingsPage: React.FC = () => {
     setSubmitting(true);
     setSuccess(false);
     try {
-      await updateUserPreferences(unit, restSeconds);
+      await updateUserPreferences({
+        preferredUnit: unit,
+        defaultRestSeconds: restSeconds,
+      });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

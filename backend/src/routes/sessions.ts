@@ -23,6 +23,7 @@ import {
 import { createSessionSchema, sessionMutationSchema } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
 import { convertWeight } from "shared";
+import { sanitizeOptionalText, sanitizeText } from "../utils/sanitize.js";
 
 export const sessionsRouter = Router();
 
@@ -185,6 +186,11 @@ sessionsRouter.post(
       }
 
       const { name, unit, sourceSessionId } = parseResult.data;
+      const sanitizedName = sanitizeText(name);
+
+      if (!sanitizedName) {
+        return res.status(400).json({ error: "Workout name is required" });
+      }
 
       // Check if there is already an active session
       const existingActive = await db.query.workoutSessions.findFirst({
@@ -230,7 +236,7 @@ sessionsRouter.post(
           .insert(workoutSessions)
           .values({
             userId,
-            name,
+            name: sanitizedName,
             unit,
             status: "active",
           })
@@ -275,7 +281,7 @@ sessionsRouter.post(
           .insert(workoutSessions)
           .values({
             userId,
-            name,
+            name: sanitizedName,
             unit,
             status: "active",
           })
@@ -349,6 +355,18 @@ sessionsRouter.post(
       const userId = req.userId!;
       const { notes } = req.body;
 
+      if (notes !== undefined && notes !== null && typeof notes !== "string") {
+        return res.status(400).json({ error: "Notes must be a string" });
+      }
+
+      if (typeof notes === "string" && notes.length > 4000) {
+        return res
+          .status(400)
+          .json({ error: "Session notes must be at most 4000 characters" });
+      }
+
+      const sanitizedNotes = sanitizeOptionalText(notes);
+
       const session = await db.query.workoutSessions.findFirst({
         where: and(
           eq(workoutSessions.id, sessionId),
@@ -374,7 +392,7 @@ sessionsRouter.post(
         .set({
           status: "completed",
           completedAt: new Date(),
-          notes: notes || null,
+          notes: sanitizedNotes,
         })
         .where(eq(workoutSessions.id, sessionId));
 
@@ -478,9 +496,16 @@ sessionsRouter.patch(
 
       switch (mutation.type) {
         case "rename_session": {
+          const sanitizedName = sanitizeText(mutation.name);
+          if (!sanitizedName) {
+            return res
+              .status(400)
+              .json({ error: "Session name cannot be empty" });
+          }
+
           await db
             .update(workoutSessions)
-            .set({ name: mutation.name.trim() })
+            .set({ name: sanitizedName })
             .where(eq(workoutSessions.id, sessionId));
           break;
         }
@@ -872,9 +897,10 @@ sessionsRouter.patch(
         }
 
         case "update_session_notes": {
+          const sanitizedNotes = sanitizeOptionalText(mutation.notes);
           await db
             .update(workoutSessions)
-            .set({ notes: mutation.notes.trim() || null })
+            .set({ notes: sanitizedNotes })
             .where(eq(workoutSessions.id, sessionId));
           break;
         }

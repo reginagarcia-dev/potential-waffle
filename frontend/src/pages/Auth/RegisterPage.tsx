@@ -30,7 +30,7 @@ export const RegisterPage: React.FC = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await register(email, password);
+      await register({ email, password });
       navigate('/');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Email might already be in use.');

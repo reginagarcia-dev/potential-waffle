@@ -3,7 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { ChevronRight, Dumbbell, Plus, Search, X } from "lucide-react";
 import { apiFetch } from "../../lib/api.js";
 import { cn } from "../../lib/utils";
-import { ExerciseDefinition, MuscleGroup } from "shared";
+import { ExerciseDefinition, MuscleGroup, CustomExerciseInput } from "shared";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { useModalDialog } from "@/hooks/useModalDialog";
 
@@ -87,7 +87,7 @@ export const ExerciseSearchSheet: React.FC<ExerciseSearchSheetProps> = ({
   });
 
   const createExerciseMutation = useMutation({
-    mutationFn: (body: { name: string; muscleGroup: MuscleGroup }) =>
+    mutationFn: (body: CustomExerciseInput) =>
       apiFetch("/exercises", {
         method: "POST",
         body: JSON.stringify(body),

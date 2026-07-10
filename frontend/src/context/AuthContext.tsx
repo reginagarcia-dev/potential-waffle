@@ -1,23 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "shared";
+import { User, LoginInput, RegisterInput, UpdatePreferencesInput } from "shared";
 import {
   apiFetch,
   getAccessToken,
   onSessionInvalidated,
-  refreshSession,
+  refreshSessionWithRetry,
   setAccessToken,
 } from "../lib/api.js";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (input: LoginInput) => Promise<void>;
+  register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserPreferences: (
-    preferredUnit: "lbs" | "kg",
-    defaultRestSeconds: number,
-  ) => Promise<void>;
+  updateUserPreferences: (input: UpdatePreferencesInput) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,10 +25,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Silent login attempt on mount
+  // Silent login attempt on mount. Uses the retrying variant so a slow-to-wake
+  // backend doesn't read as "logged out" on the very first load.
   useEffect(() => {
     async function attemptSilentLogin() {
-      const data = await refreshSession();
+      const data = await refreshSessionWithRetry();
       if (data.status === "success") {
         setUser(data.user as User);
       }
@@ -45,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     async function handleVisibilityChange() {
       if (document.visibilityState !== "visible") return;
       if (getAccessToken()) return; // token still in memory, no action needed
-      const data = await refreshSession();
+      const data = await refreshSessionWithRetry();
       if (data.status === "success") {
         setUser(data.user as User);
       }
@@ -60,10 +58,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Clear the current user as soon as the refresh token is confirmed invalid.
   useEffect(() => onSessionInvalidated(() => setUser(null)), []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (input: LoginInput) => {
     const data = await apiFetch("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(input),
       skipAuth: true,
     });
     if (data && data.accessToken && data.user) {
@@ -72,10 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (input: RegisterInput) => {
     const data = await apiFetch("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(input),
       skipAuth: true,
     });
     if (data && data.accessToken && data.user) {
@@ -95,13 +93,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const updateUserPreferences = async (
-    preferredUnit: "lbs" | "kg",
-    defaultRestSeconds: number,
-  ) => {
+  const updateUserPreferences = async (input: UpdatePreferencesInput) => {
     const updatedUser = await apiFetch("/auth/preferences", {
       method: "PATCH",
-      body: JSON.stringify({ preferredUnit, defaultRestSeconds }),
+      body: JSON.stringify(input),
     });
     if (updatedUser) {
       setUser(updatedUser);

@@ -1,6 +1,6 @@
 {
   "name": "workout-tracker-monorepo",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "private": true,
   "workspaces": [
     "shared",
