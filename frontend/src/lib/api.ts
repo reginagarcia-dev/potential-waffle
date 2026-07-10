@@ -1,4 +1,11 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+// In production the SPA and API are on different domains (Vercel/Render), so
+// the refresh-token cookie would be a cross-site cookie and get blocked by
+// browser tracking protections. Routing through Vercel's /api rewrite makes
+// the API same-origin from the browser's perspective, keeping the cookie
+// first-party.
+const BASE_URL = import.meta.env.PROD
+  ? "/api"
+  : (import.meta.env.VITE_API_URL ?? "http://localhost:4000");
 const AUTH_SESSION_INVALIDATED_EVENT = "workout-tracker:session-invalidated";
 
 let accessToken: string | null = null;
@@ -42,7 +49,14 @@ export function onSessionInvalidated(listener: () => void) {
     window.removeEventListener(AUTH_SESSION_INVALIDATED_EVENT, listener);
 }
 
+// Bounds a single attempt so a hung connection can't stall retry logic
+// indefinitely — refreshSessionWithRetry's backoff math assumes each attempt
+// fails fast, not that it hangs until some browser/OS-level timeout.
+const REFRESH_TIMEOUT_MS = 8000;
+
 async function requestRefresh(attempt = 1): Promise<RefreshResult> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
   try {
     const res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
@@ -50,6 +64,7 @@ async function requestRefresh(attempt = 1): Promise<RefreshResult> {
       headers: {
         "Content-Type": "application/json",
       },
+      signal: controller.signal,
     });
 
     if (!res.ok) {
@@ -78,6 +93,8 @@ async function requestRefresh(attempt = 1): Promise<RefreshResult> {
     };
   } catch {
     return { status: "network-error" };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -90,6 +107,27 @@ export function refreshSession(): Promise<RefreshResult> {
     });
   }
   return refreshPromise;
+}
+
+// A "network-error" here isn't necessarily a dead session — it can also be a
+// backend that's still waking up from an idle scale-down, or a one-off
+// connectivity blip. Only unauthorized/success are treated as definitive, so
+// callers that would otherwise log the user out on page load (silent login,
+// tab-resume) get a few spaced-out attempts before giving up.
+export async function refreshSessionWithRetry(
+  maxAttempts = 4,
+  baseDelayMs = 1500,
+): Promise<RefreshResult> {
+  let result = await refreshSession();
+  for (
+    let attempt = 1;
+    attempt < maxAttempts && result.status === "network-error";
+    attempt++
+  ) {
+    await new Promise((resolve) => setTimeout(resolve, baseDelayMs * attempt));
+    result = await refreshSession();
+  }
+  return result;
 }
 
 export async function apiFetch(

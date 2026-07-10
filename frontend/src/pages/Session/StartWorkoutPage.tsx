@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext.js";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { BinaryToggle } from "@/components/ui/BinaryToggle";
 import { ArrowLeft, Dumbbell, Timer, ChevronDown } from "lucide-react";
-import { WorkoutSessionResponse } from "shared";
+import { WorkoutSessionResponse, CreateSessionInput } from "shared";
 
 export const StartWorkoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -55,11 +55,7 @@ export const StartWorkoutPage: React.FC = () => {
 
   // Mutation to start the workout session
   const startSessionMutation = useMutation({
-    mutationFn: (body: {
-      name: string;
-      unit: string;
-      sourceSessionId?: string;
-    }) =>
+    mutationFn: (body: CreateSessionInput) =>
       apiFetch("/sessions", {
         method: "POST",
         body: JSON.stringify(body),
@@ -88,7 +84,10 @@ export const StartWorkoutPage: React.FC = () => {
         user &&
         (unit !== user.preferredUnit || restSeconds !== user.defaultRestSeconds)
       ) {
-        await updateUserPreferences(unit, restSeconds);
+        await updateUserPreferences({
+          preferredUnit: unit,
+          defaultRestSeconds: restSeconds,
+        });
       }
 
       startSessionMutation.mutate({

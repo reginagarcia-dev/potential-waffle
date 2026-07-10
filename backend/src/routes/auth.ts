@@ -16,10 +16,12 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'supersecretjwtrefr
 
 // Cookie settings for refresh token
 const isProd = process.env.NODE_ENV === 'production';
+// The frontend proxies /api requests through its own domain (see frontend/vercel.json),
+// so this cookie is always first-party — no need for SameSite=None.
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: isProd,
-  sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+  sameSite: 'lax' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 

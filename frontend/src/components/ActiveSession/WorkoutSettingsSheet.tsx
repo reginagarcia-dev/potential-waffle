@@ -2,16 +2,14 @@ import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useModalDialog } from "@/hooks/useModalDialog";
+import { UpdateSessionSettingsCommand } from "shared";
 
 interface WorkoutSettingsSheetProps {
   isOpen: boolean;
   unit: "lbs" | "kg";
   defaultRestSeconds: number;
   onClose: () => void;
-  onSave: (settings: {
-    unit: "lbs" | "kg";
-    defaultRestSeconds: number;
-  }) => void;
+  onSave: (settings: Omit<UpdateSessionSettingsCommand, "type">) => void;
   isPending?: boolean;
 }
 

@@ -5,35 +5,47 @@ export const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters long"),
 });
 
-export type RegisterInput = z.infer<typeof registerSchema>;
+// z.input (not z.infer/z.output) throughout this file: these types describe
+// what callers construct *before* parsing, which matters wherever a field has
+// .optional().default(...) — the output type makes it required, but callers
+// can still legally omit it.
+export type RegisterInput = z.input<typeof registerSchema>;
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
-export type LoginInput = z.infer<typeof loginSchema>;
+export type LoginInput = z.input<typeof loginSchema>;
 
 export const updatePreferencesSchema = z.object({
   preferredUnit: z.enum(["lbs", "kg"]),
   defaultRestSeconds: z.number().int().min(0),
 });
 
-export type UpdatePreferencesInput = z.infer<typeof updatePreferencesSchema>;
+export type UpdatePreferencesInput = z.input<typeof updatePreferencesSchema>;
 
 export const createSessionSchema = z.object({
-  name: z.string().trim().min(1, "Workout name is required"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Workout name is required")
+    .max(120, "Workout name must be at most 120 characters"),
   unit: z.enum(["lbs", "kg"]),
   // Copy the exercise/set structure of one of the user's completed sessions
   sourceSessionId: z.string().uuid().optional(),
 });
 
-export type CreateSessionInput = z.infer<typeof createSessionSchema>;
+export type CreateSessionInput = z.input<typeof createSessionSchema>;
 
 // Session update discriminated commands
 export const renameSessionSchema = z.object({
   type: z.literal("rename_session"),
-  name: z.string().trim().min(1, "Session name cannot be empty"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Session name cannot be empty")
+    .max(120, "Session name must be at most 120 characters"),
 });
 
 export const addExerciseSchema = z.object({
@@ -88,7 +100,7 @@ export const updateSessionSettingsSchema = z.object({
 
 export const updateSessionNotesSchema = z.object({
   type: z.literal("update_session_notes"),
-  notes: z.string(),
+  notes: z.string().max(4000, "Session notes must be at most 4000 characters"),
 });
 
 export const applyOverloadSuggestionSchema = z.object({
@@ -111,7 +123,26 @@ export const sessionMutationSchema = z.discriminatedUnion("type", [
   applyOverloadSuggestionSchema,
 ]);
 
-export type SessionMutationInput = z.infer<typeof sessionMutationSchema>;
+export type SessionMutationInput = z.input<typeof sessionMutationSchema>;
+
+// Named per-command types so consumers can import a command directly instead
+// of re-deriving it with Extract<SessionMutationInput, {type: "..."}>.
+export type RenameSessionCommand = z.input<typeof renameSessionSchema>;
+export type AddExerciseCommand = z.input<typeof addExerciseSchema>;
+export type DeleteExerciseCommand = z.input<typeof deleteExerciseSchema>;
+export type AddSetCommand = z.input<typeof addSetSchema>;
+export type UpdateSetCommand = z.input<typeof updateSetSchema>;
+export type DeleteSetCommand = z.input<typeof deleteSetSchema>;
+export type PrefillSetsCommand = z.input<typeof prefillSetsSchema>;
+export type UpdateSessionSettingsCommand = z.input<
+  typeof updateSessionSettingsSchema
+>;
+export type UpdateSessionNotesCommand = z.input<
+  typeof updateSessionNotesSchema
+>;
+export type ApplyOverloadSuggestionCommand = z.input<
+  typeof applyOverloadSuggestionSchema
+>;
 
 export const measurementSchema = z.object({
   date: z
@@ -119,16 +150,23 @@ export const measurementSchema = z.object({
     .datetime()
     .optional()
     .default(() => new Date().toISOString()),
-  type: z.string().min(1, "Measurement type is required"),
+  type: z
+    .string()
+    .min(1, "Measurement type is required")
+    .max(80, "Measurement type must be at most 80 characters"),
   value: z.number().positive("Value must be positive"),
   unit: z.enum(["lbs", "kg", "cm", "in"]),
 });
 
-export type MeasurementInput = z.infer<typeof measurementSchema>;
+export type MeasurementInput = z.input<typeof measurementSchema>;
 
 export const customExerciseSchema = z.object({
-  name: z.string().min(1, "Exercise name is required"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Exercise name is required")
+    .max(120, "Exercise name must be at most 120 characters"),
   muscleGroup: z.enum(["legs", "push", "pull", "core", "cardio"]),
 });
 
-export type CustomExerciseInput = z.infer<typeof customExerciseSchema>;
+export type CustomExerciseInput = z.input<typeof customExerciseSchema>;

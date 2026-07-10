@@ -4,7 +4,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext.js";
 import { apiFetch } from "../../lib/api.js";
 import { useRestTimerStore } from "../../stores/restTimerStore.js";
-import { WorkoutSessionResponse, WorkoutSetResponse } from "shared";
+import {
+  WorkoutSessionResponse,
+  WorkoutSetResponse,
+  SessionMutationInput,
+  UpdateSetCommand,
+} from "shared";
 import {
   ArrowLeft,
   Ban,
@@ -69,7 +74,7 @@ export function ActiveSessionPage() {
 
   // 3. Consolidated Mutation Endpoint
   const mutation = useMutation({
-    mutationFn: (payload: any) =>
+    mutationFn: (payload: SessionMutationInput) =>
       apiFetch(`/sessions/${id}`, {
         method: "PATCH",
         body: JSON.stringify(payload),
@@ -83,7 +88,9 @@ export function ActiveSessionPage() {
 
   // Optimistic toggle mutation — applies status change immediately to the cache
   const toggleMutation = useMutation({
-    mutationFn: (payload: { setId: string; status: "pending" | "completed" }) =>
+    mutationFn: (
+      payload: Required<Pick<UpdateSetCommand, "setId" | "status">>,
+    ) =>
       apiFetch(`/sessions/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ type: "update_set", ...payload }),
@@ -157,19 +164,14 @@ export function ActiveSessionPage() {
     setIsEditOpen(true);
   };
 
-  const handleConfirmSetEdit = (data: {
-    weight: number | null;
-    reps: number | null;
-    rpe: number | null;
-    type: "warmup" | "working";
-  }) => {
+  const handleConfirmSetEdit = (
+    data: Omit<UpdateSetCommand, "type" | "setId">,
+  ) => {
     if (!activeSet) return;
-    const { type: setType, ...rest } = data;
     mutation.mutate({
       type: "update_set",
       setId: activeSet.id,
-      setType,
-      ...rest,
+      ...data,
     });
   };
 
@@ -178,11 +180,11 @@ export function ActiveSessionPage() {
     field: "weight" | "reps",
     value: number | null,
   ) => {
-    mutation.mutate({
-      type: "update_set",
-      setId: set.id,
-      [field]: value,
-    });
+    mutation.mutate(
+      field === "weight"
+        ? { type: "update_set", setId: set.id, weight: value }
+        : { type: "update_set", setId: set.id, reps: value },
+    );
   };
 
   const handleToggleSetStatus = (set: WorkoutSetResponse) => {
@@ -450,11 +452,7 @@ export function ActiveSessionPage() {
         defaultRestSeconds={user?.defaultRestSeconds ?? 180}
         onClose={() => setIsSettingsOpen(false)}
         onSave={(settings) => {
-          mutation.mutate({
-            type: "update_session_settings",
-            unit: settings.unit,
-            defaultRestSeconds: settings.defaultRestSeconds,
-          });
+          mutation.mutate({ type: "update_session_settings", ...settings });
           setIsSettingsOpen(false);
         }}
         isPending={mutation.isPending}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { WorkoutSetResponse } from "shared";
+import { WorkoutSetResponse, UpdateSetCommand } from "shared";
 import { X, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductButton } from "../ui/ProductButton";
@@ -10,12 +10,7 @@ interface SetEditSheetProps {
   set: WorkoutSetResponse | null;
   unit: "lbs" | "kg";
   onClose: () => void;
-  onConfirm: (data: {
-    weight: number | null;
-    reps: number | null;
-    rpe: number | null;
-    type: "warmup" | "working";
-  }) => void;
+  onConfirm: (data: Omit<UpdateSetCommand, "type" | "setId">) => void;
 }
 
 export const SetEditSheet: React.FC<SetEditSheetProps> = ({
@@ -63,7 +58,7 @@ export const SetEditSheet: React.FC<SetEditSheetProps> = ({
       weight: weight === "" ? null : Number(weight),
       reps: reps === "" ? null : Number(reps),
       rpe: rpe === "" ? null : Number(rpe),
-      type: setType,
+      setType,
     });
     onClose();
   };
