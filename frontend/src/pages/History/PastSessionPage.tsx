@@ -20,6 +20,7 @@ import { WorkoutSessionResponse } from "shared";
 import { withSetLabels } from "@/lib/setLabels";
 import { Spinner } from "@/components/ui/Spinner";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { getSessionDurationMinutes } from "@/lib/session";
 
 export const PastSessionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -86,17 +87,7 @@ export const PastSessionPage: React.FC = () => {
     );
   }
 
-  const durationMin =
-    session.completedAt && session.startedAt
-      ? Math.max(
-          1,
-          Math.round(
-            (new Date(session.completedAt).getTime() -
-              new Date(session.startedAt).getTime()) /
-              60000,
-          ),
-        )
-      : 0;
+  const durationMin = getSessionDurationMinutes(session) ?? 0;
 
   const setsCount = session.exercises.reduce(
     (acc, ex) => acc + ex.sets.filter((s) => s.type === "working").length,

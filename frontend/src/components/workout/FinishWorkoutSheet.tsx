@@ -7,6 +7,7 @@ type FinishWorkoutSheetProps = {
   elapsedMinutes: number;
   exercises: number;
   sets: number;
+  currentNote?: string;
   onClose: () => void;
   onFinish: (notes: string) => void;
 };
@@ -16,14 +17,19 @@ export function FinishWorkoutSheet({
   elapsedMinutes,
   exercises,
   sets,
+  currentNote,
   onClose,
   onFinish,
 }: FinishWorkoutSheetProps) {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (!isOpen) setNotes("");
-  }, [isOpen]);
+    if (isOpen) {
+      setNotes(currentNote ?? "");
+    } else {
+      setNotes("");
+    }
+  }, [isOpen, currentNote]);
 
   if (!isOpen) return null;
 

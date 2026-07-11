@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sheet } from "@/components/ui/Sheet";
 import { useModalDialog } from "@/hooks/useModalDialog";
 import { UpdateSessionSettingsCommand } from "shared";
 
@@ -38,39 +38,13 @@ export const WorkoutSettingsSheet: React.FC<WorkoutSettingsSheetProps> = ({
   }, [unit, defaultRestSeconds, isOpen]);
 
   return (
-    <dialog
-      ref={dialogRef}
+    <Sheet
+      dialogRef={dialogRef}
       onClose={onClose}
-      className={cn(
-        "m-auto w-[min(100%-2rem,26rem)] max-w-md rounded-2xl border border-border bg-card p-0 text-foreground shadow-elevated",
-        "backdrop:bg-black/60 backdrop:backdrop-blur-sm",
-        "overflow-hidden focus:outline-none",
-      )}
+      title="Workout Settings"
+      subtitle="Adjust settings for this workout only."
+      closeAriaLabel="Close workout settings"
     >
-      <div className="px-5 pt-4">
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
-
-        <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Workout Settings
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Adjust settings for this workout only.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            aria-label="Close workout settings"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-      </div>
-
       <div className="space-y-4 px-5 py-5">
         <section className="rounded-xl border border-border bg-surface p-4">
           <h3 className="text-sm font-semibold text-foreground">Unit</h3>
@@ -144,7 +118,7 @@ export const WorkoutSettingsSheet: React.FC<WorkoutSettingsSheetProps> = ({
           {isPending ? "Saving..." : "Save Settings"}
         </button>
       </div>
-    </dialog>
+    </Sheet>
   );
 };
 

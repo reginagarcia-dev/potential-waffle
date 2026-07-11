@@ -5,6 +5,8 @@ import { WorkoutSessionResponse } from "shared";
 import { useAuth } from "@/context/AuthContext";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { PRListCard } from "@/components/workout/PRListCard";
+import { getSessionDurationMinutes } from "@/lib/session";
+import { formatShortDate } from "@/lib/dates";
 import { useNavigate } from "react-router-dom";
 
 // Matches the height of a loaded 3-row card (PRs / Recent Workouts) so
@@ -65,31 +67,15 @@ export function TodayPage() {
 
   const recentPrs = (recentPrsRaw ?? []).map((pr) => ({
     ...pr,
-    date: pr.date
-      ? new Date(pr.date).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })
-      : "",
+    date: pr.date ? formatShortDate(pr.date) : "",
   }));
 
   const getSessionDate = (session: WorkoutSessionResponse) =>
-    new Date(session.completedAt || session.startedAt).toLocaleDateString(
-      undefined,
-      { month: "short", day: "numeric" },
-    );
+    formatShortDate(session.completedAt || session.startedAt);
 
   const getSessionDuration = (session: WorkoutSessionResponse) => {
-    if (!session.completedAt || !session.startedAt) return "—";
-    const mins = Math.max(
-      1,
-      Math.round(
-        (new Date(session.completedAt).getTime() -
-          new Date(session.startedAt).getTime()) /
-          60000,
-      ),
-    );
-    return `${mins} min`;
+    const mins = getSessionDurationMinutes(session);
+    return mins ? `${mins} min` : "—";
   };
 
   const getSessionSets = (session: WorkoutSessionResponse) =>

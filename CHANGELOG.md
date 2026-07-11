@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.16] - 2026-07-11
+
+### Fixed
+
+- Finishing a workout without editing the note field no longer overwrites a previously saved session note.
+
+### Changed
+
+- Consolidated the seven active-session sheet dialogs (rename, note, settings, set-edit, exercise search, discard workout, delete exercise) onto a single shared `Sheet` shell component.
+- Extracted a shared `ConfirmDestructiveSheet` component for the Discard Workout and Delete Exercise confirmations, removing the duplicated markup between them.
+- Moved `ActiveSessionPage`'s mutation logic (rename, set updates, finish, abandon) into a dedicated `useSessionMutations` hook.
+- Removed a dead unreachable "Discard Workout" menu and leftover commented-out JSX from `ActiveSessionPage`.
+
+### Added
+
+- Playwright tests measuring Cumulative Layout Shift on the Today and History pages to guard against future loading-state regressions.
+
 ## [1.0.15] - 2026-07-11
 
 ### Fixed

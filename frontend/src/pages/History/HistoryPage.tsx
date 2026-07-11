@@ -10,6 +10,8 @@ import { PRListCard } from "@/components/workout/PRListCard";
 import { buildMonthGrid, toDayKey } from "@/lib/calendar";
 import { Spinner } from "@/components/ui/Spinner";
 import { MonthCalendar } from "@/components/History/MonthCalendar";
+import { getSessionDurationMinutes } from "@/lib/session";
+import { formatShortDate } from "@/lib/dates";
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -109,12 +111,7 @@ export const HistoryPage: React.FC = () => {
           weight: s.weight,
           reps: s.reps,
           unit: session.unit,
-          date: session.completedAt
-            ? new Date(session.completedAt).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })
-            : "",
+          date: session.completedAt ? formatShortDate(session.completedAt) : "",
         })),
     ),
   );
@@ -141,17 +138,8 @@ export const HistoryPage: React.FC = () => {
 
   const dayCells = buildMonthGrid(viewedMonth);
 
-  const getSessionDuration = (session: WorkoutSessionResponse) => {
-    if (!session.completedAt || !session.startedAt) return 0;
-    return Math.max(
-      1,
-      Math.round(
-        (new Date(session.completedAt).getTime() -
-          new Date(session.startedAt).getTime()) /
-          60000,
-      ),
-    );
-  };
+  const getSessionDuration = (session: WorkoutSessionResponse) =>
+    getSessionDurationMinutes(session) ?? 0;
 
   if (isLoading) {
     return <Spinner variant="page" />;
@@ -186,10 +174,7 @@ export const HistoryPage: React.FC = () => {
               {session.exercises.length} ex
             </span>
             <span className="font-normal text-muted-foreground">
-              {new Date(session.completedAt!).toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-              })}
+              {formatShortDate(session.completedAt!)}
             </span>
           </div>
         </div>
