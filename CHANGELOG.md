@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.15] - 2026-07-11
+
+### Fixed
+
+- Removed unused dead code (`xxExerciseCard`, `xxExerciseSearchSheet`, `xxSetRow`, `EditSetSheet`) left over from an earlier component draft.
+- Fixed a build issue where importing a single constant from the shared package pulled the entire `zod` library into the Settings/Start Workout bundle; the shared package is now correctly tree-shaken.
+
+### Changed
+
+- Consolidated duplicated UI across pages into shared components: `Spinner` (6+ call sites), `MetricCard` (now supports an icon), `PRListCard` (Today/History PR lists), and `MonthCalendar` (extracted from the History page).
+- Extracted the warmup/working set-numbering logic and the History calendar-grid math into standalone, reusable utilities (`lib/setLabels.ts`, `lib/calendar.ts`).
+- Extracted a shared auth page shell (`AuthCardShell`, `AuthTextField`, `AuthErrorBanner`) used by Login, Register, Forgot Password, and Reset Password, removing near-duplicate markup across all four.
+- Rest-duration options are now defined once in the shared package (`REST_DURATION_OPTIONS_SECONDS`) instead of being hardcoded separately in Settings and Start Workout.
+
 ## [1.0.14] - 2026-07-11
 
 ### Fixed

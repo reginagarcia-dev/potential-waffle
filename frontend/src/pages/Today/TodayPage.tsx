@@ -4,7 +4,7 @@ import { apiFetch } from "@/lib/api";
 import { WorkoutSessionResponse } from "shared";
 import { useAuth } from "@/context/AuthContext";
 import { ProductButton } from "@/components/ui/ProductButton";
-import { PRBadge } from "@/components/workout/PRBadge";
+import { PRListCard } from "@/components/workout/PRListCard";
 import { useNavigate } from "react-router-dom";
 
 // Matches the height of a loaded 3-row card (PRs / Recent Workouts) so
@@ -154,35 +154,22 @@ export function TodayPage() {
         {loadingPrs ? (
           <SkeletonCard trailingIcon />
         ) : recentPrs.length > 0 ? (
-          <div className="rounded-xl border border-border bg-card p-4">
-            {recentPrs.slice(0, 3).map((pr, idx) => (
-              <div
-                key={idx}
-                className={`flex items-center justify-between${idx > 0 ? " mt-4 border-t border-border pt-4" : ""}`}
-              >
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {pr.exerciseName}
-                  </p>
-                  <p className="text-sm tabular-nums text-foreground">
-                    {pr.weight} {pr.unit}
-                    {pr.reps ? ` × ${pr.reps}` : ""}
-                  </p>
-                </div>
-                <PRBadge />
-              </div>
-            ))}
-            {recentPrs.length > 3 && (
-              <button
-                onClick={() =>
-                  navigate("/history", { state: { prOnly: true } })
-                }
-                className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
-              >
-                Show All
-              </button>
-            )}
-          </div>
+          <PRListCard
+            entries={recentPrs.slice(0, 3)}
+            emphasize
+            footer={
+              recentPrs.length > 3 && (
+                <button
+                  onClick={() =>
+                    navigate("/history", { state: { prOnly: true } })
+                  }
+                  className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
+                >
+                  Show All
+                </button>
+              )
+            }
+          />
         ) : (
           <div className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-sm text-muted-foreground">

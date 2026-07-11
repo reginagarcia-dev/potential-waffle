@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PublicGuard } from "./components/Auth/PublicGuard";
+import { Spinner } from "@/components/ui/Spinner";
 
 // Route-level code splitting: each page (and whatever it pulls in — e.g.
 // recharts via ProgressPage) only downloads when that route is actually
@@ -36,11 +37,7 @@ const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
 const queryClient = new QueryClient();
 
 function RouteFallback() {
-  return (
-    <div className="flex h-screen w-screen items-center justify-center bg-background text-primary">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent border-primary"></div>
-    </div>
-  );
+  return <Spinner variant="fullscreen" />;
 }
 
 export default function App() {

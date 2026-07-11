@@ -11,6 +11,7 @@ import {
   Activity,
 } from "lucide-react";
 import { PRBadge } from "@/components/workout/PRBadge";
+import { MetricCard } from "@/components/ui/MetricCard";
 import {
   ResponsiveContainer,
   LineChart,
@@ -134,29 +135,22 @@ export const ProgressPage: React.FC = () => {
             <div className="space-y-6">
               {/* Highlight stats */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-border bg-card p-4 text-center">
-                  <PRBadge className="mx-auto size-6 p-1" />
-                  <span className="mt-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    All-Time Max Weight
-                  </span>
-                  <span className="mt-0.5 block text-xl font-semibold tabular-nums text-foreground">
-                    {progressData.bestWeight
+                <MetricCard
+                  icon={<PRBadge className="size-6 p-1" />}
+                  label="All-Time Max Weight"
+                  value={
+                    progressData.bestWeight
                       ? `${progressData.bestWeight} ${user?.preferredUnit ?? ""}`
-                      : "—"}
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-border bg-card p-4 text-center">
-                  <Activity className="mx-auto size-4 animate-pulse text-primary" />
-                  <span className="mt-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    All-Time Max Reps
-                  </span>
-                  <span className="mt-0.5 block text-xl font-semibold tabular-nums text-foreground">
-                    {progressData.bestReps
-                      ? `${progressData.bestReps} reps`
-                      : "—"}
-                  </span>
-                </div>
+                      : "—"
+                  }
+                />
+                <MetricCard
+                  icon={<Activity className="size-4 animate-pulse text-primary" />}
+                  label="All-Time Max Reps"
+                  value={
+                    progressData.bestReps ? `${progressData.bestReps} reps` : "—"
+                  }
+                />
               </div>
 
               {/* Max Weight Chart */}

@@ -5,6 +5,7 @@
   "types": "src/index.ts",
   "type": "module",
   "private": true,
+  "sideEffects": false,
   "dependencies": {
     "zod": "^3.23.8"
   }

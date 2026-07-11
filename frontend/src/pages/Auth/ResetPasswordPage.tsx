@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
-import { Dumbbell, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { ProductButton } from "@/components/ui/ProductButton";
+import { Spinner } from "@/components/ui/Spinner";
+import { AuthCardShell } from "@/components/Auth/AuthCardShell";
+import { AuthTextField } from "@/components/Auth/AuthTextField";
+import { AuthErrorBanner } from "@/components/Auth/AuthErrorBanner";
 
 export function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -57,73 +61,15 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8">
-        <div className="flex flex-col items-center justify-center">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/30">
-            <Dumbbell className="size-6" />
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-semibold tracking-tight text-foreground">
-            {done ? "Password updated" : "Set new password"}
-          </h2>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            {done
-              ? "Your password has been reset. Redirecting to login…"
-              : "Choose a strong password for your account."}
-          </p>
-        </div>
-
-        {!done && (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="rounded-lg bg-danger/10 p-3 text-sm text-danger ring-1 ring-danger/20">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="password" className="block text-xs font-semibold text-muted-foreground">
-                  New Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Min. 8 characters"
-                />
-              </div>
-              <div>
-                <label htmlFor="confirm" className="block text-xs font-semibold text-muted-foreground">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirm"
-                  type="password"
-                  required
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  className="mt-1 block h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <ProductButton type="submit" fullWidth disabled={submitting}>
-              {submitting ? (
-                <div className="size-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              ) : (
-                "Reset Password"
-              )}
-            </ProductButton>
-          </form>
-        )}
-
-        {!done && (
+    <AuthCardShell
+      heading={done ? "Password updated" : "Set new password"}
+      subtext={
+        done
+          ? "Your password has been reset. Redirecting to login…"
+          : "Choose a strong password for your account."
+      }
+      footer={
+        !done && (
           <div className="text-center text-sm">
             <Link
               to="/login"
@@ -133,9 +79,41 @@ export function ResetPasswordPage() {
               Back to login
             </Link>
           </div>
-        )}
-      </div>
-    </div>
+        )
+      }
+    >
+      {!done && (
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && <AuthErrorBanner message={error} />}
+
+          <div className="space-y-4">
+            <AuthTextField
+              id="password"
+              label="New Password"
+              type="password"
+              required
+              minLength={8}
+              value={password}
+              onChange={setPassword}
+              placeholder="Min. 8 characters"
+            />
+            <AuthTextField
+              id="confirm"
+              label="Confirm Password"
+              type="password"
+              required
+              value={confirm}
+              onChange={setConfirm}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <ProductButton type="submit" fullWidth disabled={submitting}>
+            {submitting ? <Spinner variant="button" /> : "Reset Password"}
+          </ProductButton>
+        </form>
+      )}
+    </AuthCardShell>
   );
 }
 

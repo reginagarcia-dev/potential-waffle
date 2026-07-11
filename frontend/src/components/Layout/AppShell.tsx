@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
+import { Spinner } from "@/components/ui/Spinner";
 
 type AppShellProps = {
   children?: ReactNode;
@@ -13,11 +14,7 @@ type AppShellProps = {
 // mounted and tappable instead of the whole screen flashing to a full-page
 // spinner on every first visit to a route.
 function PageFallback() {
-  return (
-    <div className="flex flex-1 items-center justify-center py-20 text-primary">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-transparent border-primary"></div>
-    </div>
-  );
+  return <Spinner variant="inline" />;
 }
 
 export function AppShell({ children }: AppShellProps) {

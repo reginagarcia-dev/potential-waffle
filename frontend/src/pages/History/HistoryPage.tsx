@@ -2,17 +2,14 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
-import {
-  Award,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Dumbbell,
-} from "lucide-react";
+import { Award, Calendar, ChevronRight, Clock, Dumbbell } from "lucide-react";
 import { WorkoutSessionResponse } from "shared";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { PRBadge } from "@/components/workout/PRBadge";
+import { PRListCard } from "@/components/workout/PRListCard";
+import { buildMonthGrid, toDayKey } from "@/lib/calendar";
+import { Spinner } from "@/components/ui/Spinner";
+import { MonthCalendar } from "@/components/History/MonthCalendar";
 
 export const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,13 +23,8 @@ export const HistoryPage: React.FC = () => {
   });
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
 
-  const pad2 = (value: number) => String(value).padStart(2, "0");
-
-  const toDayKey = (date: Date) =>
-    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-
   const toMonthKey = (date: Date) =>
-    `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
   const viewedMonthKey = toMonthKey(viewedMonth);
 
@@ -143,73 +135,11 @@ export const HistoryPage: React.FC = () => {
     setSelectedDayKey(null);
   };
 
-  const firstDayOfMonth = new Date(
-    viewedMonth.getFullYear(),
-    viewedMonth.getMonth(),
-    1,
-  );
-  const leadingDays = (firstDayOfMonth.getDay() + 6) % 7;
-  const daysInMonth = new Date(
-    viewedMonth.getFullYear(),
-    viewedMonth.getMonth() + 1,
-    0,
-  ).getDate();
-  const trailingDays = 42 - leadingDays - daysInMonth;
-  const prevMonthDays = new Date(
-    viewedMonth.getFullYear(),
-    viewedMonth.getMonth(),
-    0,
-  ).getDate();
+  const handleSelectDay = (dayKey: string) => {
+    setSelectedDayKey((prev) => (prev === dayKey ? null : dayKey));
+  };
 
-  const dayCells: Array<{
-    key: string;
-    label: number;
-    inCurrentMonth: boolean;
-    dayKey: string;
-  }> = [];
-
-  for (let i = 0; i < leadingDays; i += 1) {
-    const day = prevMonthDays - leadingDays + i + 1;
-    const date = new Date(
-      viewedMonth.getFullYear(),
-      viewedMonth.getMonth() - 1,
-      day,
-    );
-    dayCells.push({
-      key: `prev-${toDayKey(date)}`,
-      label: day,
-      inCurrentMonth: false,
-      dayKey: toDayKey(date),
-    });
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const date = new Date(
-      viewedMonth.getFullYear(),
-      viewedMonth.getMonth(),
-      day,
-    );
-    dayCells.push({
-      key: `current-${toDayKey(date)}`,
-      label: day,
-      inCurrentMonth: true,
-      dayKey: toDayKey(date),
-    });
-  }
-
-  for (let day = 1; day <= trailingDays; day += 1) {
-    const date = new Date(
-      viewedMonth.getFullYear(),
-      viewedMonth.getMonth() + 1,
-      day,
-    );
-    dayCells.push({
-      key: `next-${toDayKey(date)}`,
-      label: day,
-      inCurrentMonth: false,
-      dayKey: toDayKey(date),
-    });
-  }
+  const dayCells = buildMonthGrid(viewedMonth);
 
   const getSessionDuration = (session: WorkoutSessionResponse) => {
     if (!session.completedAt || !session.startedAt) return 0;
@@ -224,11 +154,7 @@ export const HistoryPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-[70vh] items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <Spinner variant="page" />;
   }
 
   const renderSessionCard = (session: WorkoutSessionResponse) => {
@@ -286,8 +212,6 @@ export const HistoryPage: React.FC = () => {
       })
     : null;
 
-  const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
   return (
     <div className="space-y-6 px-4">
       <div className="sticky top-[env(safe-area-inset-top)] z-10 border-b border-border bg-background pt-6 pb-4">
@@ -330,102 +254,18 @@ export const HistoryPage: React.FC = () => {
           )}
 
           {prOnly ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              {prEntries.map((pr, idx) => (
-                <div
-                  key={pr.id}
-                  className={`flex items-center justify-between${idx > 0 ? " mt-4 border-t border-border pt-4" : ""}`}
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {pr.exerciseName}
-                    </p>
-                    <p className="text-sm tabular-nums text-muted-foreground">
-                      {pr.weight != null ? `${pr.weight} ${pr.unit}` : "—"}
-                      {pr.reps ? ` × ${pr.reps} reps` : ""}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {pr.date}
-                    </p>
-                  </div>
-                  <PRBadge />
-                </div>
-              ))}
-            </div>
+            <PRListCard entries={prEntries} showRepsWord />
           ) : (
             <>
-              <div className="rounded-2xl border border-border bg-card p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => shiftViewedMonth(-1)}
-                    className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
-                    aria-label="Previous month"
-                  >
-                    <ChevronLeft className="size-5" />
-                  </button>
-
-                  <h2 className="text-base font-semibold text-foreground">
-                    {monthLabel}
-                  </h2>
-
-                  <button
-                    type="button"
-                    onClick={() => shiftViewedMonth(1)}
-                    className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
-                    aria-label="Next month"
-                  >
-                    <ChevronRight className="size-5" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-7 gap-y-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {weekdayLabels.map((label) => (
-                    <div key={label}>{label}</div>
-                  ))}
-                </div>
-
-                <div className="mt-2 grid grid-cols-7 gap-y-2">
-                  {dayCells.map((cell) => {
-                    const isSelected =
-                      cell.inCurrentMonth && selectedDayKey === cell.dayKey;
-                    const hasWorkout =
-                      cell.inCurrentMonth && workoutDayKeys.has(cell.dayKey);
-
-                    return (
-                      <button
-                        key={cell.key}
-                        type="button"
-                        disabled={!cell.inCurrentMonth}
-                        onClick={() => {
-                          if (!cell.inCurrentMonth) return;
-                          setSelectedDayKey((prev) =>
-                            prev === cell.dayKey ? null : cell.dayKey,
-                          );
-                        }}
-                        className={`mx-auto flex size-10 flex-col items-center justify-center rounded-full text-sm transition ${
-                          cell.inCurrentMonth
-                            ? isSelected
-                              ? "bg-primary text-primary-foreground"
-                              : "text-foreground hover:bg-muted/60"
-                            : "text-muted-foreground/40"
-                        }`}
-                      >
-                        <span>{cell.label}</span>
-                        <span
-                          className={`mt-0.5 size-1.5 rounded-full ${
-                            hasWorkout
-                              ? isSelected
-                                ? "bg-primary-foreground"
-                                : "bg-primary"
-                              : "bg-transparent"
-                          }`}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <MonthCalendar
+                monthLabel={monthLabel}
+                dayCells={dayCells}
+                selectedDayKey={selectedDayKey}
+                workoutDayKeys={workoutDayKeys}
+                onPrevMonth={() => shiftViewedMonth(-1)}
+                onNextMonth={() => shiftViewedMonth(1)}
+                onSelectDay={handleSelectDay}
+              />
 
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-foreground">
