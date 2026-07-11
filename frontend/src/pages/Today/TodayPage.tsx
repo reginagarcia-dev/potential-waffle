@@ -6,6 +6,30 @@ import { useAuth } from "@/context/AuthContext";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { PRBadge } from "@/components/workout/PRBadge";
 import { useNavigate } from "react-router-dom";
+
+// Matches the height of a loaded 3-row card (PRs / Recent Workouts) so
+// swapping from loading -> loaded doesn't shift the rest of the page (CLS).
+function SkeletonCard({ trailingIcon }: { trailingIcon?: boolean }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      {[0, 1, 2].map((idx) => (
+        <div
+          key={idx}
+          className={`flex items-center justify-between${idx > 0 ? " mt-4 border-t border-border pt-4" : ""}`}
+        >
+          <div className="space-y-2">
+            <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
+            <div className="h-3.5 w-20 animate-pulse rounded bg-muted" />
+          </div>
+          {trailingIcon && (
+            <div className="size-5 shrink-0 animate-pulse rounded-full bg-muted" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function TodayPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,7 +50,7 @@ export function TodayPage() {
   });
 
   // 3. Fetch all-time PRs from dedicated endpoint (not limited to recent sessions)
-  const { data: recentPrsRaw } = useQuery<
+  const { data: recentPrsRaw, isLoading: loadingPrs } = useQuery<
     Array<{
       exerciseName: string;
       weight: number;
@@ -127,7 +151,9 @@ export function TodayPage() {
           Recent PRs
         </h2>
 
-        {recentPrs.length > 0 ? (
+        {loadingPrs ? (
+          <SkeletonCard trailingIcon />
+        ) : recentPrs.length > 0 ? (
           <div className="rounded-xl border border-border bg-card p-4">
             {recentPrs.slice(0, 3).map((pr, idx) => (
               <div
@@ -171,7 +197,9 @@ export function TodayPage() {
           Recent Workouts
         </h2>
 
-        {recentSessions && recentSessions.length > 0 ? (
+        {loadingRecent ? (
+          <SkeletonCard trailingIcon />
+        ) : recentSessions && recentSessions.length > 0 ? (
           <div className="rounded-xl border border-border bg-card p-4">
             {recentSessions.slice(0, 3).map((session, idx) => (
               <button
@@ -201,13 +229,13 @@ export function TodayPage() {
               </button>
             )}
           </div>
-        ) : !loadingRecent ? (
+        ) : (
           <div className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-sm text-muted-foreground">
               No workouts recorded yet.
             </p>
           </div>
-        ) : null}
+        )}
       </section>
     </div>
   );

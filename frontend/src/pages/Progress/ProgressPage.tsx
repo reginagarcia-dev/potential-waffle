@@ -64,10 +64,12 @@ export const ProgressPage: React.FC = () => {
         )}
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {selectedExercise ? selectedExercise.name : "Analytics & Progress"}
+            {selectedExercise ? selectedExercise.name : "Progress"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {selectedExercise ? selectedExercise.muscleGroup?.toUpperCase() : "Visualize your lifts over time"}
+            {selectedExercise
+              ? selectedExercise.muscleGroup?.toUpperCase()
+              : "Visualize your lifts over time"}
           </p>
         </div>
       </div>
@@ -150,7 +152,9 @@ export const ProgressPage: React.FC = () => {
                     All-Time Max Reps
                   </span>
                   <span className="mt-0.5 block text-xl font-semibold tabular-nums text-foreground">
-                    {progressData.bestReps ? `${progressData.bestReps} reps` : "—"}
+                    {progressData.bestReps
+                      ? `${progressData.bestReps} reps`
+                      : "—"}
                   </span>
                 </div>
               </div>
@@ -167,8 +171,14 @@ export const ProgressPage: React.FC = () => {
                       data={chartData}
                       margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="formattedDate" stroke="hsl(var(--muted-foreground))" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="hsl(var(--border))"
+                      />
+                      <XAxis
+                        dataKey="formattedDate"
+                        stroke="hsl(var(--muted-foreground))"
+                      />
                       <YAxis stroke="hsl(var(--muted-foreground))" />
                       <Tooltip
                         contentStyle={{
@@ -176,7 +186,10 @@ export const ProgressPage: React.FC = () => {
                           borderColor: "hsl(var(--border))",
                           borderRadius: "8px",
                         }}
-                        labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold" }}
+                        labelStyle={{
+                          color: "hsl(var(--foreground))",
+                          fontWeight: "bold",
+                        }}
                         itemStyle={{ color: "hsl(var(--primary))" }}
                       />
                       <Line
@@ -186,7 +199,11 @@ export const ProgressPage: React.FC = () => {
                         stroke="hsl(var(--primary))"
                         strokeWidth={3}
                         activeDot={{ r: 6 }}
-                        dot={{ r: 4, stroke: "hsl(var(--primary))", strokeWidth: 1 }}
+                        dot={{
+                          r: 4,
+                          stroke: "hsl(var(--primary))",
+                          strokeWidth: 1,
+                        }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -207,10 +224,14 @@ export const ProgressPage: React.FC = () => {
                         key={idx}
                         className="flex items-center justify-between border-b border-border/40 py-2 text-sm font-semibold text-foreground last:border-0"
                       >
-                        <span className="text-muted-foreground">{point.formattedDate}</span>
+                        <span className="text-muted-foreground">
+                          {point.formattedDate}
+                        </span>
                         <span>
                           Best:{" "}
-                          <span className="text-foreground">{point.bestWeight}</span>
+                          <span className="text-foreground">
+                            {point.bestWeight}
+                          </span>
                         </span>
                       </div>
                     ))}
@@ -220,9 +241,12 @@ export const ProgressPage: React.FC = () => {
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center">
               <TrendingUp className="mx-auto mb-3 size-8 text-muted-foreground" />
-              <h4 className="text-sm font-semibold text-foreground">No performance data yet</h4>
+              <h4 className="text-sm font-semibold text-foreground">
+                No performance data yet
+              </h4>
               <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">
-                Once you complete workouts featuring this exercise, your progress charts will appear here.
+                Once you complete workouts featuring this exercise, your
+                progress charts will appear here.
               </p>
             </div>
           )}

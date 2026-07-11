@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.14] - 2026-07-11
+
+### Fixed
+
+- Today page's Recent PRs and Recent Workouts sections now show loading skeletons instead of popping in at full height once data arrives, eliminating a layout shift (CLS) on load.
+- Route-level loading states now only affect the page content area — the bottom navigation no longer disappears behind a full-screen spinner when navigating to a not-yet-loaded page.
+
+### Changed
+
+- Route-level code splitting: each page (and its dependencies, e.g. `recharts` for the Progress page) now loads on demand instead of being bundled into the initial page load.
+- Added manual vendor chunking (`charts`, `query`, `router`, `react-vendor`, `icons`) for more effective long-term browser caching.
+- Shortened "History" and "Progress" page headers for a cleaner mobile title bar.
+
+### Added
+
+- Client-side Web Vitals collection (CLS, FCP, INP, LCP, TTFB) for local performance inspection during development.
+
 ## [1.0.13] - 2026-07-10
 
 ### Fixed
