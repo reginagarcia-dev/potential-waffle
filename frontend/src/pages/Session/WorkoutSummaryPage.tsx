@@ -6,6 +6,8 @@ import { ChevronDown } from "lucide-react";
 import { WorkoutSessionResponse } from "shared";
 import { PRBadge } from "@/components/workout/PRBadge";
 import { ProductButton } from "@/components/ui/ProductButton";
+import { withSetLabels } from "@/lib/setLabels";
+import { Spinner } from "@/components/ui/Spinner";
 
 export const WorkoutSummaryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,11 +37,7 @@ export const WorkoutSummaryPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-[70vh] items-center justify-center text-primary">
-        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <Spinner variant="page" className="text-primary" />;
   }
 
   if (!session) {
@@ -230,43 +228,37 @@ export const WorkoutSummaryPage: React.FC = () => {
                 {isExpanded && (
                   <div className="border-t border-border bg-surface/40 px-3 py-3">
                     <div className="space-y-2">
-                      {(() => {
-                        let workingSetNumber = 0;
-                        return ex.sets.map((set) => {
-                          const isWarmup = set.type === "warmup";
-                          const displayLabel = isWarmup
-                            ? "W"
-                            : String(++workingSetNumber);
+                      {withSetLabels(ex.sets).map(({ set, label }) => {
+                        const isWarmup = set.type === "warmup";
 
-                          return (
-                            <div
-                              key={set.id}
-                              className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
-                            >
-                              <div className="flex min-w-0 items-center gap-3">
-                                <span
-                                  className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                                    isWarmup
-                                      ? "bg-muted text-muted-foreground"
-                                      : "bg-primary/10 text-primary"
-                                  }`}
-                                >
-                                  {displayLabel}
-                                </span>
+                        return (
+                          <div
+                            key={set.id}
+                            className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span
+                                className={`inline-flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                                  isWarmup
+                                    ? "bg-muted text-muted-foreground"
+                                    : "bg-primary/10 text-primary"
+                                }`}
+                              >
+                                {label}
+                              </span>
 
-                                <span className="truncate text-sm font-semibold tabular-nums text-foreground">
-                                  {set.weight ?? "—"} {session.unit} ×{" "}
-                                  {set.reps ?? "—"}
-                                </span>
-                              </div>
-
-                              <div className="flex shrink-0 items-center gap-2">
-                                {set.isPr && <PRBadge />}
-                              </div>
+                              <span className="truncate text-sm font-semibold tabular-nums text-foreground">
+                                {set.weight ?? "—"} {session.unit} ×{" "}
+                                {set.reps ?? "—"}
+                              </span>
                             </div>
-                          );
-                        });
-                      })()}
+
+                            <div className="flex shrink-0 items-center gap-2">
+                              {set.isPr && <PRBadge />}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

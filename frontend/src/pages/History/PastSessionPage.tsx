@@ -17,6 +17,9 @@ import WorkoutNoteSheet from "@/components/ActiveSession/WorkoutNoteSheet";
 import DiscardWorkoutSheet from "@/components/ActiveSession/DiscardWorkoutSheet";
 import { EllipsisMenu } from "@/components/ui/EllipsisMenu";
 import { WorkoutSessionResponse } from "shared";
+import { withSetLabels } from "@/lib/setLabels";
+import { Spinner } from "@/components/ui/Spinner";
+import { MetricCard } from "@/components/ui/MetricCard";
 
 export const PastSessionPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -63,11 +66,7 @@ export const PastSessionPage: React.FC = () => {
   });
 
   if (isLoading || deleteMutation.isPending || deleteMutation.isSuccess) {
-    return (
-      <div className="flex h-[70vh] items-center justify-center">
-        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <Spinner variant="page" />;
   }
 
   if (error || !session) {
@@ -170,45 +169,26 @@ export const PastSessionPage: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Clock className="mx-auto size-5 text-primary" />
-          <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Duration
-          </span>
-          <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">
-            {durationMin} min
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Dumbbell className="mx-auto size-5 text-primary" />
-          <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Exercises
-          </span>
-          <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">
-            {session.exercises.length}
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Calendar className="mx-auto size-5 text-primary" />
-          <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Sets Logged
-          </span>
-          <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">
-            {setsCount}
-          </span>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <PRBadge className="mx-auto size-7 p-1" />
-          <span className="mt-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            PRs
-          </span>
-          <span className="mt-1 block text-xl font-semibold tabular-nums text-foreground">
-            {prCount}
-          </span>
-        </div>
+        <MetricCard
+          icon={<Clock className="size-5 text-primary" />}
+          label="Duration"
+          value={`${durationMin} min`}
+        />
+        <MetricCard
+          icon={<Dumbbell className="size-5 text-primary" />}
+          label="Exercises"
+          value={String(session.exercises.length)}
+        />
+        <MetricCard
+          icon={<Calendar className="size-5 text-primary" />}
+          label="Sets Logged"
+          value={String(setsCount)}
+        />
+        <MetricCard
+          icon={<PRBadge className="size-7 p-1" />}
+          label="PRs"
+          value={String(prCount)}
+        />
       </div>
 
       {/* Workout Notes */}
@@ -248,39 +228,32 @@ export const PastSessionPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  {(() => {
-                    let workingCount = 0;
-                    return ex.sets.map((set) => {
-                      const setLabel =
-                        set.type === "warmup" ? "W" : String(++workingCount);
-                      return (
-                        <div
-                          key={set.id}
-                          className="grid grid-cols-3 border-b border-border/40 py-1.5 text-sm text-foreground last:border-0"
-                        >
-                          <span className="flex items-center gap-3 text-muted-foreground">
-                            {setLabel}
-                            {set.isPr && <PRBadge className="size-5 p-0.5" />}
-                          </span>
-                          <span className="text-right">
-                            {set.weight}{" "}
-                            <span className="text-xs text-muted-foreground">
-                              {session.unit}
-                            </span>
-                          </span>
-                          <span className="text-right">
-                            {set.reps}{" "}
-                            <span className="text-xs text-muted-foreground">
-                              reps
-                            </span>
-                          </span>
-                          {/* <span className="text-right text-primary">
-                            {set.rpe ? `@${set.rpe}` : '—'}
-                          </span> */}
-                        </div>
-                      );
-                    });
-                  })()}
+                  {withSetLabels(ex.sets).map(({ set, label }) => (
+                    <div
+                      key={set.id}
+                      className="grid grid-cols-3 border-b border-border/40 py-1.5 text-sm text-foreground last:border-0"
+                    >
+                      <span className="flex items-center gap-3 text-muted-foreground">
+                        {label}
+                        {set.isPr && <PRBadge className="size-5 p-0.5" />}
+                      </span>
+                      <span className="text-right">
+                        {set.weight}{" "}
+                        <span className="text-xs text-muted-foreground">
+                          {session.unit}
+                        </span>
+                      </span>
+                      <span className="text-right">
+                        {set.reps}{" "}
+                        <span className="text-xs text-muted-foreground">
+                          reps
+                        </span>
+                      </span>
+                      {/* <span className="text-right text-primary">
+                        {set.rpe ? `@${set.rpe}` : '—'}
+                      </span> */}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

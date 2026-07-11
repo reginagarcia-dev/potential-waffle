@@ -15,6 +15,9 @@ export const SET_STATUSES: SetStatus[] = ['pending', 'completed'];
 export const MEASUREMENT_UNITS: MeasurementUnit[] = ['lbs', 'kg', 'cm', 'in'];
 
 export const DEFAULT_REST_SECONDS = 180;
+export const REST_DURATION_OPTIONS_SECONDS: number[] = [
+  60, 90, 120, 150, 180, 240, 300,
+];
 
 export function convertWeight(weight: number, from: Unit, to: Unit): number {
   if (from === to) return weight;

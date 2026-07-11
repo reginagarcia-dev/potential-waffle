@@ -7,7 +7,12 @@ import { useAuth } from "../../context/AuthContext.js";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { BinaryToggle } from "@/components/ui/BinaryToggle";
 import { ArrowLeft, Dumbbell, Timer, ChevronDown } from "lucide-react";
-import { WorkoutSessionResponse, CreateSessionInput } from "shared";
+import {
+  WorkoutSessionResponse,
+  CreateSessionInput,
+  REST_DURATION_OPTIONS_SECONDS,
+} from "shared";
+import { formatRestDurationLabel } from "@/lib/restDuration";
 
 export const StartWorkoutPage: React.FC = () => {
   const navigate = useNavigate();
@@ -223,13 +228,11 @@ export const StartWorkoutPage: React.FC = () => {
                   onChange={(e) => setRestSeconds(parseInt(e.target.value))}
                   className="block w-full appearance-none rounded-lg border border-input bg-surface px-3 py-3 pr-10 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm font-semibold"
                 >
-                  <option value={60}>1 minute</option>
-                  <option value={90}>1 min 30s</option>
-                  <option value={120}>2 minutes</option>
-                  <option value={150}>2 mins 30s</option>
-                  <option value={180}>3 minutes</option>
-                  <option value={240}>4 minutes</option>
-                  <option value={300}>5 minutes</option>
+                  {REST_DURATION_OPTIONS_SECONDS.map((seconds) => (
+                    <option key={seconds} value={seconds}>
+                      {formatRestDurationLabel(seconds)}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               </div>

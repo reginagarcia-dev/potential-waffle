@@ -11,6 +11,7 @@ import {
   Activity,
 } from "lucide-react";
 import { PRBadge } from "@/components/workout/PRBadge";
+import { MetricCard } from "@/components/ui/MetricCard";
 import {
   ResponsiveContainer,
   LineChart,
@@ -64,10 +65,12 @@ export const ProgressPage: React.FC = () => {
         )}
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {selectedExercise ? selectedExercise.name : "Analytics & Progress"}
+            {selectedExercise ? selectedExercise.name : "Progress"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {selectedExercise ? selectedExercise.muscleGroup?.toUpperCase() : "Visualize your lifts over time"}
+            {selectedExercise
+              ? selectedExercise.muscleGroup?.toUpperCase()
+              : "Visualize your lifts over time"}
           </p>
         </div>
       </div>
@@ -132,27 +135,22 @@ export const ProgressPage: React.FC = () => {
             <div className="space-y-6">
               {/* Highlight stats */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-border bg-card p-4 text-center">
-                  <PRBadge className="mx-auto size-6 p-1" />
-                  <span className="mt-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    All-Time Max Weight
-                  </span>
-                  <span className="mt-0.5 block text-xl font-semibold tabular-nums text-foreground">
-                    {progressData.bestWeight
+                <MetricCard
+                  icon={<PRBadge className="size-6 p-1" />}
+                  label="All-Time Max Weight"
+                  value={
+                    progressData.bestWeight
                       ? `${progressData.bestWeight} ${user?.preferredUnit ?? ""}`
-                      : "—"}
-                  </span>
-                </div>
-
-                <div className="rounded-xl border border-border bg-card p-4 text-center">
-                  <Activity className="mx-auto size-4 animate-pulse text-primary" />
-                  <span className="mt-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    All-Time Max Reps
-                  </span>
-                  <span className="mt-0.5 block text-xl font-semibold tabular-nums text-foreground">
-                    {progressData.bestReps ? `${progressData.bestReps} reps` : "—"}
-                  </span>
-                </div>
+                      : "—"
+                  }
+                />
+                <MetricCard
+                  icon={<Activity className="size-4 animate-pulse text-primary" />}
+                  label="All-Time Max Reps"
+                  value={
+                    progressData.bestReps ? `${progressData.bestReps} reps` : "—"
+                  }
+                />
               </div>
 
               {/* Max Weight Chart */}
@@ -167,8 +165,14 @@ export const ProgressPage: React.FC = () => {
                       data={chartData}
                       margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="formattedDate" stroke="hsl(var(--muted-foreground))" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="hsl(var(--border))"
+                      />
+                      <XAxis
+                        dataKey="formattedDate"
+                        stroke="hsl(var(--muted-foreground))"
+                      />
                       <YAxis stroke="hsl(var(--muted-foreground))" />
                       <Tooltip
                         contentStyle={{
@@ -176,7 +180,10 @@ export const ProgressPage: React.FC = () => {
                           borderColor: "hsl(var(--border))",
                           borderRadius: "8px",
                         }}
-                        labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "bold" }}
+                        labelStyle={{
+                          color: "hsl(var(--foreground))",
+                          fontWeight: "bold",
+                        }}
                         itemStyle={{ color: "hsl(var(--primary))" }}
                       />
                       <Line
@@ -186,7 +193,11 @@ export const ProgressPage: React.FC = () => {
                         stroke="hsl(var(--primary))"
                         strokeWidth={3}
                         activeDot={{ r: 6 }}
-                        dot={{ r: 4, stroke: "hsl(var(--primary))", strokeWidth: 1 }}
+                        dot={{
+                          r: 4,
+                          stroke: "hsl(var(--primary))",
+                          strokeWidth: 1,
+                        }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -207,10 +218,14 @@ export const ProgressPage: React.FC = () => {
                         key={idx}
                         className="flex items-center justify-between border-b border-border/40 py-2 text-sm font-semibold text-foreground last:border-0"
                       >
-                        <span className="text-muted-foreground">{point.formattedDate}</span>
+                        <span className="text-muted-foreground">
+                          {point.formattedDate}
+                        </span>
                         <span>
                           Best:{" "}
-                          <span className="text-foreground">{point.bestWeight}</span>
+                          <span className="text-foreground">
+                            {point.bestWeight}
+                          </span>
                         </span>
                       </div>
                     ))}
@@ -220,9 +235,12 @@ export const ProgressPage: React.FC = () => {
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center">
               <TrendingUp className="mx-auto mb-3 size-8 text-muted-foreground" />
-              <h4 className="text-sm font-semibold text-foreground">No performance data yet</h4>
+              <h4 className="text-sm font-semibold text-foreground">
+                No performance data yet
+              </h4>
               <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">
-                Once you complete workouts featuring this exercise, your progress charts will appear here.
+                Once you complete workouts featuring this exercise, your
+                progress charts will appear here.
               </p>
             </div>
           )}

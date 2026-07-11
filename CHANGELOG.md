@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.15] - 2026-07-11
+
+### Fixed
+
+- Removed unused dead code (`xxExerciseCard`, `xxExerciseSearchSheet`, `xxSetRow`, `EditSetSheet`) left over from an earlier component draft.
+- Fixed a build issue where importing a single constant from the shared package pulled the entire `zod` library into the Settings/Start Workout bundle; the shared package is now correctly tree-shaken.
+
+### Changed
+
+- Consolidated duplicated UI across pages into shared components: `Spinner` (6+ call sites), `MetricCard` (now supports an icon), `PRListCard` (Today/History PR lists), and `MonthCalendar` (extracted from the History page).
+- Extracted the warmup/working set-numbering logic and the History calendar-grid math into standalone, reusable utilities (`lib/setLabels.ts`, `lib/calendar.ts`).
+- Extracted a shared auth page shell (`AuthCardShell`, `AuthTextField`, `AuthErrorBanner`) used by Login, Register, Forgot Password, and Reset Password, removing near-duplicate markup across all four.
+- Rest-duration options are now defined once in the shared package (`REST_DURATION_OPTIONS_SECONDS`) instead of being hardcoded separately in Settings and Start Workout.
+
+## [1.0.14] - 2026-07-11
+
+### Fixed
+
+- Today page's Recent PRs and Recent Workouts sections now show loading skeletons instead of popping in at full height once data arrives, eliminating a layout shift (CLS) on load.
+- Route-level loading states now only affect the page content area — the bottom navigation no longer disappears behind a full-screen spinner when navigating to a not-yet-loaded page.
+
+### Changed
+
+- Route-level code splitting: each page (and its dependencies, e.g. `recharts` for the Progress page) now loads on demand instead of being bundled into the initial page load.
+- Added manual vendor chunking (`charts`, `query`, `router`, `react-vendor`, `icons`) for more effective long-term browser caching.
+- Shortened "History" and "Progress" page headers for a cleaner mobile title bar.
+
+### Added
+
+- Client-side Web Vitals collection (CLS, FCP, INP, LCP, TTFB) for local performance inspection during development.
+
 ## [1.0.13] - 2026-07-10
 
 ### Fixed

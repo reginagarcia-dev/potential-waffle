@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext.js";
 import { LogOut, Timer, ShieldCheck } from "lucide-react";
 import { ProductButton } from "@/components/ui/ProductButton";
+import { REST_DURATION_OPTIONS_SECONDS } from "shared";
+import { formatRestDurationLabel } from "@/lib/restDuration";
 
 export const SettingsPage: React.FC = () => {
   const { user, logout, updateUserPreferences } = useAuth();
@@ -98,13 +100,11 @@ export const SettingsPage: React.FC = () => {
               onChange={(e) => setRestSeconds(parseInt(e.target.value))}
               className="block w-full rounded-lg border border-input bg-surface px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-bold"
             >
-              <option value={60}>1 minute</option>
-              <option value={90}>1 min 30s</option>
-              <option value={120}>2 minutes</option>
-              <option value={150}>2 mins 30s</option>
-              <option value={180}>3 minutes</option>
-              <option value={240}>4 minutes</option>
-              <option value={300}>5 minutes</option>
+              {REST_DURATION_OPTIONS_SECONDS.map((seconds) => (
+                <option key={seconds} value={seconds}>
+                  {formatRestDurationLabel(seconds)}
+                </option>
+              ))}
             </select>
           </div>
         </div>
