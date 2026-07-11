@@ -1,18 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../context/AuthContext.js";
 import { apiFetch } from "../../lib/api.js";
 import { useRestTimerStore } from "../../stores/restTimerStore.js";
-import {
-  WorkoutSessionResponse,
-  WorkoutSetResponse,
-  SessionMutationInput,
-  UpdateSetCommand,
-} from "shared";
+import { useSessionMutations } from "@/hooks/useSessionMutations";
+import { WorkoutSessionResponse, WorkoutSetResponse, UpdateSetCommand } from "shared";
 import {
   ArrowLeft,
-  Ban,
   FileText,
   Pencil,
   Plus,
@@ -41,16 +36,22 @@ export function ActiveSessionPage() {
   const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   const { id } = useParams<{ id: string }>();
-  const sessionQueryKey = ["session", id] as const;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const startTimer = useRestTimerStore((s) => s.startTimer);
 
+  const {
+    sessionQueryKey,
+    mutation,
+    toggleMutation,
+    finishSessionMutation,
+    abandonSessionMutation,
+  } = useSessionMutations(id);
+
   // Dialog Overlays states
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  const [showOptions, setShowOptions] = useState(false);
   const [editingWorkoutName, setEditingWorkoutName] = useState(false);
   const [tempWorkoutName, setTempWorkoutName] = useState("");
 
@@ -71,69 +72,6 @@ export function ActiveSessionPage() {
       navigate(`/session/${session.id}/summary`);
     }
   }, [session, navigate]);
-
-  // 3. Consolidated Mutation Endpoint
-  const mutation = useMutation({
-    mutationFn: (payload: SessionMutationInput) =>
-      apiFetch(`/sessions/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      }),
-    onSuccess: (updatedSession) => {
-      queryClient.setQueryData(sessionQueryKey, updatedSession);
-      queryClient.setQueryData(["activeSession"], updatedSession);
-      queryClient.invalidateQueries({ queryKey: sessionQueryKey });
-    },
-  });
-
-  // Optimistic toggle mutation — applies status change immediately to the cache
-  const toggleMutation = useMutation({
-    mutationFn: (
-      payload: Required<Pick<UpdateSetCommand, "setId" | "status">>,
-    ) =>
-      apiFetch(`/sessions/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ type: "update_set", ...payload }),
-      }),
-    onMutate: async ({ setId, status }) => {
-      await queryClient.cancelQueries({ queryKey: sessionQueryKey });
-      const previous =
-        queryClient.getQueryData<WorkoutSessionResponse>(sessionQueryKey);
-      queryClient.setQueryData<WorkoutSessionResponse>(
-        sessionQueryKey,
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            exercises: old.exercises.map((ex) => ({
-              ...ex,
-              sets: ex.sets.map((s) =>
-                s.id === setId
-                  ? {
-                      ...s,
-                      status,
-                      completedAt:
-                        status === "completed"
-                          ? new Date().toISOString()
-                          : null,
-                    }
-                  : s,
-              ),
-            })),
-          };
-        },
-      );
-      return { previous };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(sessionQueryKey, context.previous);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: sessionQueryKey });
-    },
-  });
 
   // Action handlers
   const handleRenameSession = () => {
@@ -223,42 +161,6 @@ export function ActiveSessionPage() {
       startTimer(restTime, nextSetMsg);
     }
   };
-  // 4. Finish Session Mutation
-  const finishSessionMutation = useMutation({
-    mutationFn: (notes: string) =>
-      apiFetch(`/sessions/${id}/finish`, {
-        method: "POST",
-        body: JSON.stringify({ notes }),
-      }),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: sessionQueryKey });
-      queryClient.setQueryData(["activeSession"], null);
-      queryClient.invalidateQueries({ queryKey: ["activeSession"] });
-      queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
-      navigate(`/session/${id}/summary`);
-    },
-  });
-
-  // 5. Abandon Session Mutation
-  const abandonSessionMutation = useMutation({
-    mutationFn: () => apiFetch(`/sessions/${id}/abandon`, { method: "POST" }),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: sessionQueryKey });
-      queryClient.setQueryData(["activeSession"], null);
-      queryClient.invalidateQueries({ queryKey: ["activeSession"] });
-      navigate("/");
-    },
-  });
-
-  const handleAbandon = () => {
-    if (
-      confirm(
-        "Are you sure you want to discard this workout? All unsaved logs will be lost.",
-      )
-    ) {
-      abandonSessionMutation.mutate();
-    }
-  };
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-[calc(16rem+env(safe-area-inset-bottom))]">
@@ -339,20 +241,6 @@ export function ActiveSessionPage() {
             </div>
           </div>
         </header>
-        {showOptions && (
-          <div className="absolute right-0 z-40 mt-1.5 w-44 rounded-xl border border-border bg-card p-1 shadow-card">
-            <button
-              onClick={() => {
-                setShowOptions(false);
-                handleAbandon();
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold text-danger transition hover:bg-surface"
-            >
-              <Ban className="size-4" />
-              Discard Workout
-            </button>
-          </div>
-        )}
         <ProductButton
           variant="secondary"
           fullWidth
@@ -385,13 +273,6 @@ export function ActiveSessionPage() {
             </div>
           )}
         </div>
-        {/* <ProductButton
-          fullWidth
-          className="fixed inset-x-0 bottom-21 z-30 mx-auto max-w-md px-4"
-          onClick={() => setIsFinishOpen(true)}
-        >
-          Finish Workout
-        </ProductButton> */}
         <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 mx-auto w-full max-w-md px-4 pb-4">
           <div className="space-y-3">
             <RestTimerBar />
@@ -403,23 +284,6 @@ export function ActiveSessionPage() {
         </div>
       </div>
 
-      {/* <RestTimerBar timeRemaining="01:42" nextLabel="Squat — Set 3" /> */}
-
-      {/* <EditSetSheet
-        open={isEditSetOpen}
-        setLabel="Set 3"
-        previous="135 x 7"
-        weight={weight}
-        reps={reps}
-        rpe={rpe}
-        isWarmup={isWarmup}
-        onClose={() => setIsEditSetOpen(false)}
-        onConfirm={() => setIsEditSetOpen(false)}
-        onWeightChange={setWeight}
-        onRepsChange={setReps}
-        onRpeChange={setRpe}
-        onWarmupChange={setIsWarmup}
-      /> */}
       <SetEditSheet
         isOpen={isEditOpen}
         set={activeSet}
@@ -499,10 +363,13 @@ export function ActiveSessionPage() {
             0,
           ) ?? 0
         }
+        currentNote={session?.notes ?? ""}
         onClose={() => setIsFinishOpen(false)}
         onFinish={(notes) => {
           setIsFinishOpen(false);
-          finishSessionMutation.mutate(notes);
+          finishSessionMutation.mutate(
+            notes === (session?.notes ?? "") ? undefined : notes,
+          );
         }}
       />
     </>

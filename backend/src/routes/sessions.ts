@@ -353,7 +353,7 @@ sessionsRouter.post(
     try {
       const sessionId = req.params.id;
       const userId = req.userId!;
-      const { notes } = req.body;
+      const notes = req.body?.notes;
 
       if (notes !== undefined && notes !== null && typeof notes !== "string") {
         return res.status(400).json({ error: "Notes must be a string" });
@@ -364,8 +364,6 @@ sessionsRouter.post(
           .status(400)
           .json({ error: "Session notes must be at most 4000 characters" });
       }
-
-      const sanitizedNotes = sanitizeOptionalText(notes);
 
       const session = await db.query.workoutSessions.findFirst({
         where: and(
@@ -387,13 +385,24 @@ sessionsRouter.post(
       // Pending sets stay pending — only sets the user explicitly marked done
       // count. Pre-filled values (copied workouts, added sets) must never be
       // recorded as performed just because the workout was finished.
+      const updateData: {
+        status: "completed";
+        completedAt: Date;
+        notes?: string | null;
+      } = {
+        status: "completed",
+        completedAt: new Date(),
+      };
+
+      // Preserve previously saved notes when finish payload omits `notes`.
+      // If notes is explicitly provided (including empty string), apply it.
+      if (notes !== undefined) {
+        updateData.notes = sanitizeOptionalText(notes);
+      }
+
       await db
         .update(workoutSessions)
-        .set({
-          status: "completed",
-          completedAt: new Date(),
-          notes: sanitizedNotes,
-        })
+        .set(updateData)
         .where(eq(workoutSessions.id, sessionId));
 
       const fullSession = await db.query.workoutSessions.findFirst({

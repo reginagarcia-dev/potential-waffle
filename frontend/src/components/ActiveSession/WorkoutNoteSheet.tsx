@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Sheet } from "@/components/ui/Sheet";
 import { useModalDialog } from "@/hooks/useModalDialog";
 
 interface WorkoutNoteSheetProps {
@@ -26,39 +26,13 @@ export const WorkoutNoteSheet: React.FC<WorkoutNoteSheetProps> = ({
   }, [currentNote, isOpen]);
 
   return (
-    <dialog
-      ref={dialogRef}
+    <Sheet
+      dialogRef={dialogRef}
       onClose={onClose}
-      className={cn(
-        "m-auto w-[min(100%-2rem,26rem)] max-w-md rounded-2xl border border-border bg-card p-0 text-foreground shadow-elevated",
-        "backdrop:bg-black/60 backdrop:backdrop-blur-sm",
-        "overflow-hidden focus:outline-none",
-      )}
+      title="Workout Note"
+      subtitle="Capture how the workout felt."
+      closeAriaLabel="Close workout note"
     >
-      <div className="px-5 pt-4">
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-muted" />
-
-        <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Workout Note
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Capture how the workout felt.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            aria-label="Close workout note"
-          >
-            <X className="size-5" />
-          </button>
-        </div>
-      </div>
-
       <div className="px-5 py-5">
         <label
           htmlFor="workout-note"
@@ -94,7 +68,7 @@ export const WorkoutNoteSheet: React.FC<WorkoutNoteSheetProps> = ({
           {isPending ? "Saving..." : "Save Note"}
         </button>
       </div>
-    </dialog>
+    </Sheet>
   );
 };
 
