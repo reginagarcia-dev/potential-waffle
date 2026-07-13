@@ -12,6 +12,7 @@ import {
   gte,
   lt,
   count,
+  countDistinct,
 } from "drizzle-orm";
 import { db } from "../db/index.js";
 import {
@@ -23,7 +24,7 @@ import {
 } from "../db/schema.js";
 import { createSessionSchema, sessionMutationSchema } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
-import { convertWeight, crossedMilestones, WORKOUT_COUNT_MILESTONES } from "shared";
+import { convertWeight, crossedMilestones, DAYS_LOGGED_MILESTONES } from "shared";
 import { sanitizeOptionalText, sanitizeText } from "../utils/sanitize.js";
 
 export const sessionsRouter = Router();
@@ -355,6 +356,7 @@ sessionsRouter.post(
       const sessionId = req.params.id;
       const userId = req.userId!;
       const notes = req.body?.notes;
+      const localDate = req.body?.localDate;
 
       if (notes !== undefined && notes !== null && typeof notes !== "string") {
         return res.status(400).json({ error: "Notes must be a string" });
@@ -364,6 +366,12 @@ sessionsRouter.post(
         return res
           .status(400)
           .json({ error: "Session notes must be at most 4000 characters" });
+      }
+
+      if (typeof localDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
+        return res
+          .status(400)
+          .json({ error: "localDate must be a YYYY-MM-DD string" });
       }
 
       const session = await db.query.workoutSessions.findFirst({
@@ -389,10 +397,12 @@ sessionsRouter.post(
       const updateData: {
         status: "completed";
         completedAt: Date;
+        completedLocalDate: string;
         notes?: string | null;
       } = {
         status: "completed",
         completedAt: new Date(),
+        completedLocalDate: localDate,
       };
 
       // Preserve previously saved notes when finish payload omits `notes`.
@@ -408,14 +418,42 @@ sessionsRouter.post(
       // Postgres serializes concurrent updates to the same row, so only one
       // request's UPDATE can match "active" and return a row — a loser gets
       // back zero rows and bails out below without reporting any milestone.
-      const workoutMilestones = await db.transaction(async (tx) => {
-        const [{ value: completedCountBefore }] = await tx
+      //
+      // Milestones count distinct calendar DAYS with a completed workout, not
+      // total workout count — finishing a 2nd workout on a day you already
+      // logged one doesn't advance the milestone. "Day" is `completedLocalDate`
+      // — the calendar day the finishing device itself considered "today"
+      // (client-supplied, see `localDate` above) — not a server-timezone
+      // truncation of `completedAt`, so this always agrees with what the
+      // History page's calendar shows for the same user. Sessions completed
+      // before this column existed have a null `completedLocalDate` and are
+      // simply not counted (COUNT DISTINCT ignores nulls) — existing users'
+      // day-count starts accruing from their next completed workout. Note:
+      // this doesn't fully serialize two DIFFERENT sessions for the same
+      // user finishing concurrently on the same day — only the single-session
+      // double-submit case above is fully guarded — but the app only allows
+      // one active session at a time, making that interleaving impractical.
+      const milestones = await db.transaction(async (tx) => {
+        const [{ value: daysLoggedBefore }] = await tx
+          .select({
+            value: countDistinct(workoutSessions.completedLocalDate),
+          })
+          .from(workoutSessions)
+          .where(
+            and(
+              eq(workoutSessions.userId, userId),
+              eq(workoutSessions.status, "completed"),
+            ),
+          );
+
+        const [{ value: sameDayCompletedCount }] = await tx
           .select({ value: count() })
           .from(workoutSessions)
           .where(
             and(
               eq(workoutSessions.userId, userId),
               eq(workoutSessions.status, "completed"),
+              eq(workoutSessions.completedLocalDate, localDate),
             ),
           );
 
@@ -434,14 +472,17 @@ sessionsRouter.post(
           return null;
         }
 
+        const daysLoggedAfter =
+          daysLoggedBefore + (sameDayCompletedCount > 0 ? 0 : 1);
+
         return crossedMilestones(
-          completedCountBefore,
-          completedCountBefore + 1,
-          WORKOUT_COUNT_MILESTONES,
-        ).map((threshold) => ({ kind: "workout_count" as const, threshold }));
+          daysLoggedBefore,
+          daysLoggedAfter,
+          DAYS_LOGGED_MILESTONES,
+        ).map((threshold) => ({ kind: "days_logged" as const, threshold }));
       });
 
-      if (!workoutMilestones) {
+      if (!milestones) {
         return res
           .status(400)
           .json({ error: "Only active workouts can be finished" });
@@ -465,7 +506,7 @@ sessionsRouter.post(
         return res.status(404).json({ error: "Workout session not found" });
       }
 
-      return res.json({ ...fullSession, milestones: workoutMilestones });
+      return res.json({ ...fullSession, milestones });
     } catch (error) {
       next(error);
     }

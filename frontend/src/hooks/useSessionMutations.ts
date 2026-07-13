@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
+import { toDayKey } from "@/lib/calendar";
 import {
   FinishSessionResponse,
   SessionMutationInput,
@@ -85,10 +86,17 @@ export function useSessionMutations(sessionId: string | undefined) {
   });
 
   const finishSessionMutation = useMutation({
+    // Sent as the calendar day this device considers "today" — the backend
+    // uses it (not a server-timezone truncation of the completion instant)
+    // for day-based milestones, so they agree with what the History page's
+    // calendar shows for this same user.
     mutationFn: (notes?: string) =>
       apiFetch(`/sessions/${sessionId}/finish`, {
         method: "POST",
-        body: JSON.stringify(notes === undefined ? {} : { notes }),
+        body: JSON.stringify({
+          ...(notes === undefined ? {} : { notes }),
+          localDate: toDayKey(new Date()),
+        }),
       }),
     onSuccess: (data: FinishSessionResponse) => {
       queryClient.removeQueries({ queryKey: sessionQueryKey });

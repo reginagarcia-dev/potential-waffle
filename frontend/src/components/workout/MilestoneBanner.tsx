@@ -22,8 +22,8 @@ function ordinal(n: number): string {
 }
 
 function milestoneCopy({ kind, threshold }: MilestoneAchieved): string {
-  return kind === "workout_count"
-    ? `${ordinal(threshold)} workout logged!`
+  return kind === "days_logged"
+    ? `${ordinal(threshold)} day logged!`
     : `${ordinal(threshold)} PR earned!`;
 }
 
@@ -40,7 +40,7 @@ export function MilestoneBanner({ milestones }: MilestoneBannerProps) {
           )}
         >
           <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-accent/15">
-            {milestone.kind === "workout_count" ? (
+            {milestone.kind === "days_logged" ? (
               <Trophy className="size-5" />
             ) : (
               <Award className="size-5" />

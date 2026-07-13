@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, integer, boolean, real, pgEnum, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, integer, boolean, real, pgEnum, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enums
@@ -41,10 +41,18 @@ export const workoutSessions = pgTable('workout_sessions', {
   notes: text('notes'),
   startedAt: timestamp('started_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at'),
+  // The calendar day the finishing user's own device considered "today" at
+  // finish time (client-supplied, e.g. "2026-07-13") — used for day-based
+  // milestones so they agree with what the History page's calendar shows,
+  // instead of a server-timezone truncation of completedAt that can land on
+  // a different date than the user's own. Null for sessions completed
+  // before this column existed and for non-completed sessions.
+  completedLocalDate: date('completed_local_date'),
 }, (table) => {
   return {
     userStatusIdx: index('workout_sessions_user_status_idx').on(table.userId, table.status),
     userStartedIdx: index('workout_sessions_user_started_idx').on(table.userId, table.startedAt),
+    userCompletedLocalDateIdx: index('workout_sessions_user_completed_local_date_idx').on(table.userId, table.completedLocalDate),
   };
 });
 

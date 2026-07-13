@@ -19,9 +19,9 @@ export const REST_DURATION_OPTIONS_SECONDS: number[] = [
   60, 90, 120, 150, 180, 240, 300,
 ];
 
-export type MilestoneKind = 'workout_count' | 'pr_count';
+export type MilestoneKind = 'days_logged' | 'pr_count';
 
-export const WORKOUT_COUNT_MILESTONES: number[] = [1, 10, 25, 50, 100];
+export const DAYS_LOGGED_MILESTONES: number[] = [1, 10, 25, 50, 100];
 export const PR_COUNT_MILESTONES: number[] = [1, 5, 10, 25];
 
 // Every threshold in (before, after] — a range check, not `after === threshold`,

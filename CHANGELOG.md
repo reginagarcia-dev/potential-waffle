@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.18] - 2026-07-13
+
+### Changed
+
+- Milestone celebrations now count distinct days you've logged a workout, not total workouts finished — finishing a second workout on the same day no longer advances the milestone.
+
+### Fixed
+
+- Milestone day-counting now uses the calendar day your device considers "today" instead of a server-side timestamp truncation, so it always agrees with the days highlighted on the History page's calendar.
+
 ## [1.0.17] - 2026-07-12
 
 ### Added
