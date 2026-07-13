@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 import {
+  FinishSessionResponse,
   SessionMutationInput,
   UpdateSetCommand,
   WorkoutSessionResponse,
@@ -89,12 +90,14 @@ export function useSessionMutations(sessionId: string | undefined) {
         method: "POST",
         body: JSON.stringify(notes === undefined ? {} : { notes }),
       }),
-    onSuccess: () => {
+    onSuccess: (data: FinishSessionResponse) => {
       queryClient.removeQueries({ queryKey: sessionQueryKey });
       queryClient.setQueryData(["activeSession"], null);
       queryClient.invalidateQueries({ queryKey: ["activeSession"] });
       queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
-      navigate(`/session/${sessionId}/summary`);
+      navigate(`/session/${sessionId}/summary`, {
+        state: { milestones: data.milestones },
+      });
     },
   });
 

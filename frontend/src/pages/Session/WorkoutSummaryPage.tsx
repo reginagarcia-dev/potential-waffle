@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/api.js";
 import { ChevronDown } from "lucide-react";
-import { WorkoutSessionResponse } from "shared";
+import { MilestoneAchieved, WorkoutSessionResponse } from "shared";
 import { PRBadge } from "@/components/workout/PRBadge";
+import { MilestoneBanner } from "@/components/workout/MilestoneBanner";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { withSetLabels } from "@/lib/setLabels";
 import { Spinner } from "@/components/ui/Spinner";
@@ -12,6 +13,21 @@ import { Spinner } from "@/components/ui/Spinner";
 export const WorkoutSummaryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const milestones =
+    (location.state as { milestones?: MilestoneAchieved[] } | null)
+      ?.milestones ?? [];
+
+  // The browser restores history-entry state on back/forward, unlike a fresh
+  // reload — without this, navigating back to this page would replay the
+  // milestone banner as if it had just been achieved again. Replacing the
+  // entry's state right after first render keeps the celebration one-time
+  // while still letting this render show it.
+  useEffect(() => {
+    if (location.state) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const [expandedExerciseIds, setExpandedExerciseIds] = useState<Set<string>>(
     () => new Set(),
@@ -123,6 +139,8 @@ export const WorkoutSummaryPage: React.FC = () => {
           </p>
         </div>
       </header>
+
+      <MilestoneBanner milestones={milestones} />
 
       {/* Metrics Strip */}
       <section className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-card shadow-card">

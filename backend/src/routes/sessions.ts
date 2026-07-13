@@ -11,6 +11,7 @@ import {
   isNotNull,
   gte,
   lt,
+  count,
 } from "drizzle-orm";
 import { db } from "../db/index.js";
 import {
@@ -22,7 +23,7 @@ import {
 } from "../db/schema.js";
 import { createSessionSchema, sessionMutationSchema } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
-import { convertWeight } from "shared";
+import { convertWeight, crossedMilestones, WORKOUT_COUNT_MILESTONES } from "shared";
 import { sanitizeOptionalText, sanitizeText } from "../utils/sanitize.js";
 
 export const sessionsRouter = Router();
@@ -400,10 +401,51 @@ sessionsRouter.post(
         updateData.notes = sanitizeOptionalText(notes);
       }
 
-      await db
-        .update(workoutSessions)
-        .set(updateData)
-        .where(eq(workoutSessions.id, sessionId));
+      // The status check above is a fast pre-check for the common case, not
+      // the safety net — a concurrent finish request for this same session
+      // (double-tap, retry) could pass it too before either commits. The
+      // `status = "active"` clause on the UPDATE below is the actual guard:
+      // Postgres serializes concurrent updates to the same row, so only one
+      // request's UPDATE can match "active" and return a row — a loser gets
+      // back zero rows and bails out below without reporting any milestone.
+      const workoutMilestones = await db.transaction(async (tx) => {
+        const [{ value: completedCountBefore }] = await tx
+          .select({ value: count() })
+          .from(workoutSessions)
+          .where(
+            and(
+              eq(workoutSessions.userId, userId),
+              eq(workoutSessions.status, "completed"),
+            ),
+          );
+
+        const [updatedSession] = await tx
+          .update(workoutSessions)
+          .set(updateData)
+          .where(
+            and(
+              eq(workoutSessions.id, sessionId),
+              eq(workoutSessions.status, "active"),
+            ),
+          )
+          .returning();
+
+        if (!updatedSession) {
+          return null;
+        }
+
+        return crossedMilestones(
+          completedCountBefore,
+          completedCountBefore + 1,
+          WORKOUT_COUNT_MILESTONES,
+        ).map((threshold) => ({ kind: "workout_count" as const, threshold }));
+      });
+
+      if (!workoutMilestones) {
+        return res
+          .status(400)
+          .json({ error: "Only active workouts can be finished" });
+      }
 
       const fullSession = await db.query.workoutSessions.findFirst({
         where: eq(workoutSessions.id, sessionId),
@@ -419,7 +461,11 @@ sessionsRouter.post(
         },
       });
 
-      return res.json(fullSession);
+      if (!fullSession) {
+        return res.status(404).json({ error: "Workout session not found" });
+      }
+
+      return res.json({ ...fullSession, milestones: workoutMilestones });
     } catch (error) {
       next(error);
     }

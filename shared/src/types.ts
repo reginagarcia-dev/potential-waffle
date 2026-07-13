@@ -1,4 +1,4 @@
-import { Unit, MuscleGroup, SessionStatus, SetType, SetStatus, MeasurementUnit } from './constants.js';
+import { Unit, MuscleGroup, SessionStatus, SetType, SetStatus, MeasurementUnit, MilestoneKind } from './constants.js';
 
 export interface User {
   id: string;
@@ -73,6 +73,15 @@ export interface SessionExerciseResponse extends SessionExercise {
 
 export interface WorkoutSessionResponse extends WorkoutSession {
   exercises: SessionExerciseResponse[];
+}
+
+export interface MilestoneAchieved {
+  kind: MilestoneKind;
+  threshold: number;
+}
+
+export interface FinishSessionResponse extends WorkoutSessionResponse {
+  milestones: MilestoneAchieved[];
 }
 
 export interface AuthResponse {

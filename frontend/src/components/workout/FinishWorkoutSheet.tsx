@@ -8,6 +8,7 @@ type FinishWorkoutSheetProps = {
   exercises: number;
   sets: number;
   currentNote?: string;
+  isPending?: boolean;
   onClose: () => void;
   onFinish: (notes: string) => void;
 };
@@ -18,6 +19,7 @@ export function FinishWorkoutSheet({
   exercises,
   sets,
   currentNote,
+  isPending = false,
   onClose,
   onFinish,
 }: FinishWorkoutSheetProps) {
@@ -46,7 +48,8 @@ export function FinishWorkoutSheet({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            disabled={isPending}
+            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
           >
             <X className="size-5" />
           </button>
@@ -75,14 +78,20 @@ export function FinishWorkoutSheet({
           />
         </div>
 
-        <ProductButton fullWidth className="mt-5" onClick={() => onFinish(notes)}>
-          Finish Workout
+        <ProductButton
+          fullWidth
+          className="mt-5"
+          disabled={isPending}
+          onClick={() => onFinish(notes)}
+        >
+          {isPending ? "Finishing..." : "Finish Workout"}
         </ProductButton>
 
         <button
           type="button"
           onClick={onClose}
-          className="mt-3 h-11 w-full text-sm font-semibold text-muted-foreground hover:text-foreground"
+          disabled={isPending}
+          className="mt-3 h-11 w-full text-sm font-semibold text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
         >
           Keep Logging
         </button>

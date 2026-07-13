@@ -364,9 +364,14 @@ export function ActiveSessionPage() {
           ) ?? 0
         }
         currentNote={session?.notes ?? ""}
+        isPending={finishSessionMutation.isPending}
         onClose={() => setIsFinishOpen(false)}
         onFinish={(notes) => {
-          setIsFinishOpen(false);
+          // Deliberately not closing the sheet here — it stays open (with its
+          // confirm button disabled via isPending) until the mutation settles,
+          // so a second tap can't fire a duplicate finish request for the same
+          // session. On success the whole page navigates away; on failure the
+          // sheet re-enables for a clean retry.
           finishSessionMutation.mutate(
             notes === (session?.notes ?? "") ? undefined : notes,
           );
