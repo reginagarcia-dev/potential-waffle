@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.18] - 2026-07-13
+
+### Changed
+
+- Milestone celebrations now count distinct days you've logged a workout, not total workouts finished — finishing a second workout on the same day no longer advances the milestone.
+
+### Fixed
+
+- Milestone day-counting now uses the calendar day your device considers "today" instead of a server-side timestamp truncation, so it always agrees with the days highlighted on the History page's calendar.
+
+## [1.0.17] - 2026-07-12
+
+### Added
+
+- Milestone celebrations: finishing your 1st, 10th, 25th, 50th, or 100th workout now shows a banner on the workout summary page.
+
+### Fixed
+
+- Finishing a workout no longer risks a duplicate or lost result under a fast double-tap or slow connection: the Finish button now disables while the request is in flight, and the server only completes a session once even if it receives the request twice.
+- The workout summary page no longer re-shows a milestone banner if you navigate back to it with the browser's back button.
+
 ## [1.0.16] - 2026-07-11
 
 ### Fixed

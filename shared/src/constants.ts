@@ -19,6 +19,21 @@ export const REST_DURATION_OPTIONS_SECONDS: number[] = [
   60, 90, 120, 150, 180, 240, 300,
 ];
 
+export type MilestoneKind = 'days_logged' | 'pr_count';
+
+export const DAYS_LOGGED_MILESTONES: number[] = [1, 10, 25, 50, 100];
+export const PR_COUNT_MILESTONES: number[] = [1, 5, 10, 25];
+
+// Every threshold in (before, after] — a range check, not `after === threshold`,
+// so this stays correct even if a single event pushes the count up by more than 1.
+export function crossedMilestones(
+  before: number,
+  after: number,
+  thresholds: number[],
+): number[] {
+  return thresholds.filter((threshold) => before < threshold && threshold <= after);
+}
+
 export function convertWeight(weight: number, from: Unit, to: Unit): number {
   if (from === to) return weight;
   if (from === 'kg' && to === 'lbs') {
