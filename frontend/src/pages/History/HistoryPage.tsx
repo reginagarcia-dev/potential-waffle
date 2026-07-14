@@ -5,6 +5,7 @@ import { apiFetch } from "../../lib/api.js";
 import { Award, Calendar, ChevronRight, Clock, Dumbbell } from "lucide-react";
 import { WorkoutSessionResponse } from "shared";
 import { ProductButton } from "@/components/ui/ProductButton";
+import { EmptyStateCard } from "@/components/ui/EmptyStateCard";
 import { PRBadge } from "@/components/workout/PRBadge";
 import { PRListCard } from "@/components/workout/PRListCard";
 import { buildMonthGrid, toDayKey } from "@/lib/calendar";
@@ -51,26 +52,35 @@ export const HistoryPage: React.FC = () => {
     1,
   );
 
-  const { data: monthSessionsData = [], isPending: pendingMonth } = useQuery<
-    WorkoutSessionResponse[]
-  >({
+  const {
+    data: monthSessionsData = [],
+    isPending: pendingMonth,
+    isError: errorMonth,
+    refetch: refetchMonth,
+  } = useQuery<WorkoutSessionResponse[]>({
     queryKey: ["workoutHistory", "month", viewedMonthKey],
     queryFn: () => apiFetch(buildSessionsPath(monthStart, monthEnd, 50)),
     placeholderData: keepPreviousData,
   });
 
-  const { data: prSourceSessions = [], isPending: pendingPr } = useQuery<
-    WorkoutSessionResponse[]
-  >({
+  const {
+    data: prSourceSessions = [],
+    isPending: pendingPr,
+    isError: errorPr,
+    refetch: refetchPr,
+  } = useQuery<WorkoutSessionResponse[]>({
     queryKey: ["workoutHistory", "pr"],
     enabled: prOnly,
     // TODO: paginate or use a dedicated endpoint — PRs beyond 50 sessions won't appear
     queryFn: () => apiFetch("/sessions?page=1&limit=50"),
   });
 
-  const { data: anySessions = [], isPending: pendingAny } = useQuery<
-    WorkoutSessionResponse[]
-  >({
+  const {
+    data: anySessions = [],
+    isPending: pendingAny,
+    isError: errorAny,
+    refetch: refetchAny,
+  } = useQuery<WorkoutSessionResponse[]>({
     queryKey: ["workoutHistory", "any"],
     enabled: !prOnly,
     queryFn: () => apiFetch("/sessions?page=1&limit=1"),
@@ -95,6 +105,8 @@ export const HistoryPage: React.FC = () => {
   );
 
   const isLoading = prOnly ? pendingPr : pendingMonth || pendingAny;
+  const isError = prOnly ? errorPr : errorMonth || errorAny;
+  const retry = () => (prOnly ? refetchPr() : Promise.all([refetchMonth(), refetchAny()]));
 
   const hasPr = (session: WorkoutSessionResponse) =>
     session.exercises.some((ex) => ex.sets.some((s) => s.isPr));
@@ -143,6 +155,24 @@ export const HistoryPage: React.FC = () => {
 
   if (isLoading) {
     return <Spinner variant="page" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6 px-4 pt-6">
+        <EmptyStateCard
+          className="p-12"
+          icon={<Calendar className="size-8 text-muted-foreground" />}
+          title="Couldn't load your history"
+          description="Check your connection and try again."
+          action={
+            <ProductButton fullWidth onClick={retry}>
+              Retry
+            </ProductButton>
+          }
+        />
+      </div>
+    );
   }
 
   const renderSessionCard = (session: WorkoutSessionResponse) => {
@@ -227,15 +257,11 @@ export const HistoryPage: React.FC = () => {
       {prOnly || hasAnyCompletedSessions ? (
         <div className="space-y-6">
           {prOnly && prEntries.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border p-10 text-center">
-              <Award className="mx-auto mb-3 size-8 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground">
-                No PR workouts yet
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Keep lifting — your first PR will show up here.
-              </p>
-            </div>
+            <EmptyStateCard
+              icon={<Award className="size-8 text-muted-foreground" />}
+              title="No PR workouts yet"
+              description="Keep lifting - your first PR will show up here."
+            />
           )}
 
           {prOnly ? (
@@ -267,36 +293,31 @@ export const HistoryPage: React.FC = () => {
                   {visibleMonthSessions.map(renderSessionCard)}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-border p-10 text-center">
-                  <Calendar className="mx-auto mb-3 size-8 text-muted-foreground" />
-                  <p className="text-sm font-semibold text-foreground">
-                    No workouts found
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {selectedDayLabel
+                <EmptyStateCard
+                  icon={<Calendar className="size-8 text-muted-foreground" />}
+                  title="No workouts found"
+                  description={
+                    selectedDayLabel
                       ? "No workouts logged on this day."
-                      : "No workouts logged in this month."}
-                  </p>
-                </div>
+                      : "No workouts logged in this month."
+                  }
+                />
               )}
             </>
           )}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-border p-12 text-center">
-          <Calendar className="mx-auto mb-3 size-8 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">
-            No workouts recorded yet
-          </h3>
-          <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">
-            Workouts you finish will be listed here, grouped by calendar month.
-          </p>
-          <div className="mt-4">
+        <EmptyStateCard
+          className="p-12"
+          icon={<Calendar className="size-8 text-muted-foreground" />}
+          title="No workouts recorded yet"
+          description="Workouts you finish will be listed here, grouped by calendar month."
+          action={
             <ProductButton fullWidth onClick={() => navigate("/session/new")}>
               Log First Workout
             </ProductButton>
-          </div>
-        </div>
+          }
+        />
       )}
     </div>
   );

@@ -28,7 +28,7 @@ measurementsRouter.get(
         .select()
         .from(measurements)
         .where(and(...conditions))
-        .orderBy(desc(measurements.date));
+        .orderBy(desc(measurements.date), desc(measurements.createdAt));
 
       return res.json(logs);
     } catch (error) {

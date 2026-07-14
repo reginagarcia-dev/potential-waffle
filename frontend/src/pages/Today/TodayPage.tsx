@@ -37,11 +37,15 @@ export function TodayPage() {
   const { user } = useAuth();
 
   // 1. Fetch active session
-  const { data: activeSession, isLoading: loadingActive } =
-    useQuery<WorkoutSessionResponse | null>({
-      queryKey: ["activeSession"],
-      queryFn: () => apiFetch("/sessions/active"),
-    });
+  const {
+    data: activeSession,
+    isLoading: loadingActive,
+    isError: activeSessionError,
+    refetch: refetchActiveSession,
+  } = useQuery<WorkoutSessionResponse | null>({
+    queryKey: ["activeSession"],
+    queryFn: () => apiFetch("/sessions/active"),
+  });
 
   // 2. Fetch completed sessions (limit 5 for today view)
   const { data: recentSessions, isLoading: loadingRecent } = useQuery<
@@ -122,13 +126,21 @@ export function TodayPage() {
         <ProductButton
           fullWidth
           className="px-10"
-          onClick={activeSession ? handleResumeWorkout : handleStartWorkout}
+          onClick={
+            activeSessionError
+              ? () => refetchActiveSession()
+              : activeSession
+                ? handleResumeWorkout
+                : handleStartWorkout
+          }
         >
           {loadingActive
             ? "Loading session..."
-            : activeSession
-              ? "Resume Workout"
-              : "+ Start Workout"}
+            : activeSessionError
+              ? "Couldn't check session — Tap to retry"
+              : activeSession
+                ? "Resume Workout"
+                : "+ Start Workout"}
         </ProductButton>
       </div>
 

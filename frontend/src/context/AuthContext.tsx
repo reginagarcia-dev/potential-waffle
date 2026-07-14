@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, LoginInput, RegisterInput, UpdatePreferencesInput } from "shared";
 import {
   apiFetch,
-  getAccessToken,
+  isAccessTokenStale,
   onSessionInvalidated,
   refreshSessionWithRetry,
   setAccessToken,
@@ -38,11 +38,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     attemptSilentLogin();
   }, []);
 
-  // Re-authenticate when the app becomes visible again (mobile tab resume)
+  // Re-authenticate when the app becomes visible again (mobile tab resume).
+  // Access tokens expire after 15 minutes, so merely having one in memory
+  // doesn't mean it's still valid after sitting backgrounded — check actual
+  // staleness (age vs. the known server-side TTL) rather than presence.
+  // Refreshing unconditionally on every foreground event was tried and
+  // reverted: this app is commonly backgrounded/foregrounded many times per
+  // workout (switching to a rest-timer or music app between sets), and an
+  // unconditional refresh here hit the backend's refresh rate limit under
+  // that exact usage pattern, turning brief app-switches into multi-second
+  // stalls — the same class of bug this refresh path exists to prevent.
   useEffect(() => {
     async function handleVisibilityChange() {
       if (document.visibilityState !== "visible") return;
-      if (getAccessToken()) return; // token still in memory, no action needed
+      if (!isAccessTokenStale()) return;
       const data = await refreshSessionWithRetry();
       if (data.status === "success") {
         setUser(data.user as User);
