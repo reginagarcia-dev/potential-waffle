@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { PRBadge } from "@/components/workout/PRBadge";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { EmptyStateCard } from "@/components/ui/EmptyStateCard";
+import { ProductButton } from "@/components/ui/ProductButton";
 import { ExerciseProgressChart } from "@/components/Progress/ExerciseProgressChart";
 import { ExerciseDefinition, ProgressSummary } from "shared";
 import { formatShortDate } from "@/lib/dates";
@@ -22,19 +24,26 @@ export const ProgressPage: React.FC = () => {
   const [selectedExercise, setSelectedExercise] =
     useState<ExerciseDefinition | null>(null);
 
-  const { data: exercises = [], isLoading: loadingLibrary } = useQuery<
-    ExerciseDefinition[]
-  >({
+  const {
+    data: exercises = [],
+    isLoading: loadingLibrary,
+    isError: errorLibrary,
+    refetch: refetchLibrary,
+  } = useQuery<ExerciseDefinition[]>({
     queryKey: ["progressExercises", search],
     queryFn: () => apiFetch(`/exercises?q=${encodeURIComponent(search)}`),
   });
 
-  const { data: progressData, isLoading: loadingProgress } =
-    useQuery<ProgressSummary>({
-      queryKey: ["exerciseProgress", selectedExercise?.id],
-      queryFn: () => apiFetch(`/progress/${selectedExercise!.id}`),
-      enabled: !!selectedExercise,
-    });
+  const {
+    data: progressData,
+    isLoading: loadingProgress,
+    isError: errorProgress,
+    refetch: refetchProgress,
+  } = useQuery<ProgressSummary>({
+    queryKey: ["exerciseProgress", selectedExercise?.id],
+    queryFn: () => apiFetch(`/progress/${selectedExercise!.id}`),
+    enabled: !!selectedExercise,
+  });
 
   const chartData =
     progressData?.history.map((point) => ({
@@ -86,6 +95,17 @@ export const ProgressPage: React.FC = () => {
             <div className="py-8 text-center text-sm text-muted-foreground">
               Loading exercise library...
             </div>
+          ) : errorLibrary ? (
+            <EmptyStateCard
+              icon={<Search className="size-8 text-muted-foreground" />}
+              title="Couldn't load exercises"
+              description="Check your connection and try again."
+              action={
+                <ProductButton fullWidth onClick={() => refetchLibrary()}>
+                  Retry
+                </ProductButton>
+              }
+            />
           ) : exercises.length > 0 ? (
             <div className="space-y-2">
               {exercises.map((ex) => (
@@ -121,6 +141,17 @@ export const ProgressPage: React.FC = () => {
         <div className="space-y-6">
           {loadingProgress ? (
             <div className="h-64 animate-pulse rounded-xl border border-border bg-muted/30" />
+          ) : errorProgress ? (
+            <EmptyStateCard
+              icon={<TrendingUp className="size-8 text-muted-foreground" />}
+              title="Couldn't load progress"
+              description="Check your connection and try again."
+              action={
+                <ProductButton fullWidth onClick={() => refetchProgress()}>
+                  Retry
+                </ProductButton>
+              }
+            />
           ) : progressData && chartData.length > 0 ? (
             <div className="space-y-6">
               {/* Highlight stats */}
@@ -175,16 +206,12 @@ export const ProgressPage: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border bg-card/50 p-12 text-center">
-              <TrendingUp className="mx-auto mb-3 size-8 text-muted-foreground" />
-              <h4 className="text-sm font-semibold text-foreground">
-                No performance data yet
-              </h4>
-              <p className="mx-auto mt-1 max-w-xs text-xs text-muted-foreground">
-                Once you complete workouts featuring this exercise, your
-                progress charts will appear here.
-              </p>
-            </div>
+            <EmptyStateCard
+              className="bg-card/50 p-12"
+              icon={<TrendingUp className="size-8 text-muted-foreground" />}
+              title="No performance data yet"
+              description="Once you complete workouts featuring this exercise, your progress charts will appear here."
+            />
           )}
         </div>
       )}

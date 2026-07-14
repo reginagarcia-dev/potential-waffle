@@ -27,6 +27,7 @@ import { ExerciseSearchSheet } from "../../components/ActiveSession/ExerciseSear
 import { FinishWorkoutSheet } from "../../components/workout/FinishWorkoutSheet.js";
 import { EllipsisMenu } from "@/components/ui/EllipsisMenu.js";
 import { SessionTimer } from "@/components/ActiveSession/SessionTimer";
+import { Spinner } from "@/components/ui/Spinner";
 export function ActiveSessionPage() {
   const [isExerciseSearchOpen, setIsExerciseSearchOpen] = useState(false);
   const [isFinishOpen, setIsFinishOpen] = useState(false);
@@ -59,7 +60,12 @@ export function ActiveSessionPage() {
   const [activeSet, setActiveSet] = useState<WorkoutSetResponse | null>(null);
 
   // 1. Fetch active session query
-  const { data: session } = useQuery<WorkoutSessionResponse>({
+  const {
+    data: session,
+    isLoading: loadingSession,
+    isError: sessionError,
+    refetch: refetchSession,
+  } = useQuery<WorkoutSessionResponse>({
     queryKey: sessionQueryKey,
     queryFn: () => apiFetch(`/sessions/${id}`),
     // Re-verify the session status, if it's completed, redirect to summary
@@ -161,6 +167,25 @@ export function ActiveSessionPage() {
       startTimer(restTime, nextSetMsg);
     }
   };
+
+  if (loadingSession) {
+    return <Spinner variant="page" />;
+  }
+
+  if (sessionError) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-10 text-center">
+        <p className="text-sm font-semibold text-foreground">
+          Couldn't load this workout
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Check your connection and try again.
+        </p>
+        <ProductButton onClick={() => refetchSession()}>Retry</ProductButton>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-[calc(16rem+env(safe-area-inset-bottom))]">

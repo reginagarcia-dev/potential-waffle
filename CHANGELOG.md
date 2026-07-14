@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-07-14
+
+### Added
+
+- Body measurements tracking: log body weight, waist, or any custom metric from a new "Body" tab, with per-type history and a trend chart.
+
+### Fixed
+
+- The Today page's session button could get stuck on "Loading session..." indefinitely if a request stalled — requests now time out and fail visibly instead of hanging forever, including when a response stalls partway through rather than at the very start.
+- Today, History, Progress, and the active workout page now show a clear "couldn't load — retry" state instead of silently behaving as if there's no data when a request fails.
+- The app no longer aggressively re-checks your session every time it's foregrounded; it now only does so when your session is actually close to expiring, avoiding unnecessary delays when quickly switching apps between sets.
+- Logging two measurements of the same type on the same day now reliably shows the most recently logged one as "Latest".
+
 ## [1.0.18] - 2026-07-13
 
 ### Changed

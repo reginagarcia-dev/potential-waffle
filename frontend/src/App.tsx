@@ -30,6 +30,9 @@ const WorkoutSummaryPage = lazy(
 const HistoryPage = lazy(() => import("./pages/History/HistoryPage"));
 const PastSessionPage = lazy(() => import("./pages/History/PastSessionPage"));
 const ProgressPage = lazy(() => import("./pages/Progress/ProgressPage"));
+const MeasurementsPage = lazy(
+  () => import("./pages/Measurements/MeasurementsPage"),
+);
 const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
 
 // Stable instance — must live outside the component so re-renders don't
@@ -94,6 +97,7 @@ export default function App() {
                 <Route path="history" element={<HistoryPage />} />
                 <Route path="history/:id" element={<PastSessionPage />} />
                 <Route path="progress" element={<ProgressPage />} />
+                <Route path="measurements" element={<MeasurementsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
 

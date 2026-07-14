@@ -1,4 +1,4 @@
-import { BarChart3, Clock, Home, Settings } from "lucide-react";
+import { BarChart3, Clock, Home, Ruler, Settings } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,11 @@ const navItems = [
     icon: BarChart3,
   },
   {
+    label: "Body",
+    to: "/measurements",
+    icon: Ruler,
+  },
+  {
     label: "Settings",
     to: "/settings",
     icon: Settings,
@@ -28,7 +33,7 @@ const navItems = [
 export function BottomNav() {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto h-16 w-full border-t border-border bg-background/95 backdrop-blur">
-      <div className="grid h-full grid-cols-4 mx-auto max-w-md ">
+      <div className="grid h-full grid-cols-5 mx-auto max-w-md ">
         {navItems.map((item) => {
           const Icon = item.icon;
 
