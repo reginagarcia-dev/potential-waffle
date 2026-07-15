@@ -117,6 +117,19 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 import { seedExercises } from './db/seed.js';
+import { pool } from './db/index.js';
+import { verifySchemaSync } from './db/verifySchemaSync.js';
+
+// Refuse to start if schema.ts has columns the connected database doesn't
+// have yet (i.e. someone deployed a schema change without running
+// `db:push` against this database) — every request touching that column
+// would otherwise 500 in a way that's hard to distinguish from a hang.
+const missingColumns = await verifySchemaSync(pool);
+if (missingColumns.length > 0) {
+  throw new Error(
+    `FATAL: database is missing columns defined in schema.ts: ${missingColumns.join(', ')}. Run "npm run db:push --workspace=backend" against this database.`,
+  );
+}
 
 const server = app.listen(PORT, async () => {
   console.log(`Workout Tracker API Server listening on port ${PORT}`);
