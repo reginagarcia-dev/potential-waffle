@@ -21,7 +21,10 @@ if (!connectionString) {
 const pool = new pg.Pool({
   connectionString,
   // If connecting to Neon over serverless/SSL, standard node-postgres might need SSL enabled
-  ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false
+  ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : false,
+  // Bounds how long a query waits to acquire a connection so a dead/unreachable
+  // database fails fast (e.g. at the startup schema check) instead of hanging.
+  connectionTimeoutMillis: 10_000,
 });
 
 export const db = drizzle(pool, { schema });

@@ -32,7 +32,12 @@ export function EmptyStateCard({
       <div className={cn("mx-auto max-w-xs", contentClassName)}>
         {icon && <div className="mx-auto mb-3 flex justify-center">{icon}</div>}
 
-        <h3 className={cn("text-sm font-semibold text-foreground", titleClassName)}>
+        <h3
+          className={cn(
+            "text-sm font-semibold text-foreground",
+            titleClassName,
+          )}
+        >
           {title}
         </h3>
 

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-07-14
+
+### Fixed
+
+- A production database was missing a column the backend's code expected (a schema change had shipped without the corresponding database migration being applied), which caused the Today, History, and Progress pages to fail to load session and workout data. The backend now refuses to start if the connected database is missing any column its schema expects, failing loudly at boot instead of letting every request silently error out.
+
+### Added
+
+- Frontend Storybook setup (`.storybook`) with a component story for `EmptyStateCard`.
+- Frontend Storybook scripts: `storybook` and `build-storybook`.
+- Frontend test shim file for Storybook/Vitest integration (`frontend/vitest.shims.d.ts`).
+
+### Changed
+
+- Frontend Vite configuration now includes Storybook Vitest addon integration and browser test provider wiring.
+- Frontend dev dependencies were expanded for Storybook, Vitest browser execution, and Chromatic support, with the Playwright versions used by e2e tests and Storybook's browser tests aligned to the same release.
+- Frontend gitignore now excludes Storybook local log/build artifacts.
+
 ## [1.1.0] - 2026-07-14
 
 ### Added
