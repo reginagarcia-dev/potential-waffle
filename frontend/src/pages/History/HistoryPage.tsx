@@ -106,7 +106,8 @@ export const HistoryPage: React.FC = () => {
 
   const isLoading = prOnly ? pendingPr : pendingMonth || pendingAny;
   const isError = prOnly ? errorPr : errorMonth || errorAny;
-  const retry = () => (prOnly ? refetchPr() : Promise.all([refetchMonth(), refetchAny()]));
+  const retry = () =>
+    prOnly ? refetchPr() : Promise.all([refetchMonth(), refetchAny()]);
 
   const hasPr = (session: WorkoutSessionResponse) =>
     session.exercises.some((ex) => ex.sets.some((s) => s.isPr));

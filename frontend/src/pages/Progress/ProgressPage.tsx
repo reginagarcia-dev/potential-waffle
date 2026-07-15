@@ -166,10 +166,14 @@ export const ProgressPage: React.FC = () => {
                   }
                 />
                 <MetricCard
-                  icon={<Activity className="size-4 animate-pulse text-primary" />}
+                  icon={
+                    <Activity className="size-4 animate-pulse text-primary" />
+                  }
                   label="All-Time Max Reps"
                   value={
-                    progressData.bestReps ? `${progressData.bestReps} reps` : "—"
+                    progressData.bestReps
+                      ? `${progressData.bestReps} reps`
+                      : "—"
                   }
                 />
               </div>
