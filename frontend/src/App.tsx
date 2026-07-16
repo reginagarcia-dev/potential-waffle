@@ -3,10 +3,16 @@ import { lazy, Suspense } from "react";
 import { AppShell } from "@/components/Layout/AppShell";
 import { AuthGuard } from "./components/Auth/AuthGuard";
 import { AuthProvider } from "./context/AuthContext";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryCache,
+  MutationCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PublicGuard } from "./components/Auth/PublicGuard";
 import { Spinner } from "@/components/ui/Spinner";
+import { captureError } from "@/lib/sentry";
 
 // Route-level code splitting: each page (and whatever it pulls in — e.g.
 // recharts via ProgressPage) only downloads when that route is actually
@@ -36,8 +42,18 @@ const MeasurementsPage = lazy(
 const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
 
 // Stable instance — must live outside the component so re-renders don't
-// create a new client and wipe the React Query cache mid-session.
-const queryClient = new QueryClient();
+// create a new client and wipe the React Query cache mid-session. Errors
+// are reported here (rather than at each call site) so every failed
+// query/mutation is captured once, regardless of whether the component
+// that triggered it also handles its own isError state.
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => captureError(error),
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => captureError(error),
+  }),
+});
 
 function RouteFallback() {
   return <Spinner variant="fullscreen" />;
