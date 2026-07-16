@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-07-15
+
+### Added
+
+- Backend request logging now records the response status code and duration for every request (not just method/path), and a `GET /metrics` endpoint exposes in-memory request counts and error rate, overall and broken down by route.
+- Optional Sentry error tracking (opt-in via `SENTRY_DSN`/`VITE_SENTRY_DSN`) on both the backend (unhandled request errors) and frontend (render errors caught by the error boundary, and failed queries/mutations reported globally through React Query). Disabled by default; nothing is sent anywhere unless a DSN is configured.
+
 ## [1.1.2] - 2026-07-15
 
 ### Fixed
