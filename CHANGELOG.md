@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2026-07-15
+
+### Fixed
+
+- Deleting a custom exercise is now a soft delete instead of a hard delete: the exercise is hidden from your library going forward, but the record and its history are preserved instead of risking a failed delete (or an unhandled database error) once the exercise has been logged in a workout.
+- A custom exercise's progress history is no longer visible via the Progress page after it's been deleted.
+- Renaming a custom exercise immediately after deleting it (a rare race between two requests) is now correctly rejected instead of silently reviving the deleted exercise with the new name.
+
 ## [1.1.1] - 2026-07-14
 
 ### Fixed
