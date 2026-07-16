@@ -2,6 +2,7 @@ import { Router, Response, NextFunction } from 'express';
 import { eq, and, asc, desc } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { exerciseDefinitions, workoutSessions, sessionExercises, sets } from '../db/schema.js';
+import { visibleExerciseCondition } from '../db/exerciseQueries.js';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.js';
 
 export const progressRouter = Router();
@@ -58,7 +59,10 @@ progressRouter.get('/:exerciseDefinitionId', async (req: AuthenticatedRequest, r
 
     // Fetch exercise name
     const exerciseDef = await db.query.exerciseDefinitions.findFirst({
-      where: eq(exerciseDefinitions.id, exerciseDefId),
+      where: and(
+        eq(exerciseDefinitions.id, exerciseDefId),
+        visibleExerciseCondition(userId),
+      ),
     });
 
     if (!exerciseDef) {

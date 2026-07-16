@@ -1,5 +1,5 @@
 import { Router, Response, NextFunction } from "express";
-import { eq, or, and, ilike, desc, asc, isNull, not } from "drizzle-orm";
+import { eq, and, ilike, desc, asc, not } from "drizzle-orm";
 import { db } from "../db/index.js";
 import {
   exerciseDefinitions,
@@ -7,6 +7,10 @@ import {
   workoutSessions,
   sets,
 } from "../db/schema.js";
+import {
+  visibleExerciseCondition,
+  ownedCustomExerciseCondition,
+} from "../db/exerciseQueries.js";
 import { customExerciseSchema } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
 import { sanitizeText } from "../utils/sanitize.js";
@@ -25,15 +29,7 @@ exercisesRouter.get(
       const muscleGroup = req.query.muscleGroup as any | undefined;
       const userId = req.userId!;
 
-      const conditions = [];
-
-      // Filter to global exercises (createdBy is null) OR custom user exercises
-      conditions.push(
-        or(
-          isNull(exerciseDefinitions.createdBy),
-          eq(exerciseDefinitions.createdBy, userId),
-        ),
-      );
+      const conditions = [visibleExerciseCondition(userId)];
 
       if (q && q.trim().length > 0) {
         conditions.push(ilike(exerciseDefinitions.name, `%${q.trim()}%`));
@@ -80,10 +76,7 @@ exercisesRouter.post(
       const existing = await db.query.exerciseDefinitions.findFirst({
         where: and(
           ilike(exerciseDefinitions.name, sanitizedName),
-          or(
-            isNull(exerciseDefinitions.createdBy),
-            eq(exerciseDefinitions.createdBy, userId),
-          ),
+          visibleExerciseCondition(userId),
         ),
       });
 
@@ -134,11 +127,7 @@ exercisesRouter.patch(
 
       // Only custom exercises owned by this user can be edited
       const exercise = await db.query.exerciseDefinitions.findFirst({
-        where: and(
-          eq(exerciseDefinitions.id, exerciseId),
-          eq(exerciseDefinitions.createdBy, userId),
-          eq(exerciseDefinitions.isCustom, true),
-        ),
+        where: ownedCustomExerciseCondition(exerciseId, userId),
       });
 
       if (!exercise) {
@@ -151,10 +140,7 @@ exercisesRouter.patch(
       const duplicate = await db.query.exerciseDefinitions.findFirst({
         where: and(
           ilike(exerciseDefinitions.name, sanitizedName),
-          or(
-            isNull(exerciseDefinitions.createdBy),
-            eq(exerciseDefinitions.createdBy, userId),
-          ),
+          visibleExerciseCondition(userId),
           not(eq(exerciseDefinitions.id, exerciseId)),
         ),
       });
@@ -165,11 +151,20 @@ exercisesRouter.patch(
         });
       }
 
+      // Re-apply the ownership/not-deleted guard on the mutating query itself
+      // (not just the pre-check above) so a concurrent delete can't leave a
+      // window where this update still lands on a since-deleted row.
       const [updated] = await db
         .update(exerciseDefinitions)
         .set({ name: sanitizedName, muscleGroup })
-        .where(eq(exerciseDefinitions.id, exerciseId))
+        .where(ownedCustomExerciseCondition(exerciseId, userId))
         .returning();
+
+      if (!updated) {
+        return res
+          .status(404)
+          .json({ error: "Exercise not found or cannot be edited" });
+      }
 
       return res.json(updated);
     } catch (error) {
@@ -187,14 +182,9 @@ exercisesRouter.delete(
       const userId = req.userId!;
 
       const [deleted] = await db
-        .delete(exerciseDefinitions)
-        .where(
-          and(
-            eq(exerciseDefinitions.id, exerciseId),
-            eq(exerciseDefinitions.createdBy, userId),
-            eq(exerciseDefinitions.isCustom, true),
-          ),
-        )
+        .update(exerciseDefinitions)
+        .set({ deletedAt: new Date() })
+        .where(ownedCustomExerciseCondition(exerciseId, userId))
         .returning();
 
       if (!deleted) {

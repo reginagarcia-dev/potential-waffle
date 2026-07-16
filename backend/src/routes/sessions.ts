@@ -22,6 +22,7 @@ import {
   exerciseDefinitions,
   users,
 } from "../db/schema.js";
+import { visibleExerciseCondition } from "../db/exerciseQueries.js";
 import { createSessionSchema, sessionMutationSchema } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
 import { convertWeight, crossedMilestones, DAYS_LOGGED_MILESTONES } from "shared";
@@ -610,7 +611,10 @@ sessionsRouter.patch(
           const exerciseDefId = mutation.exerciseDefinitionId;
 
           const definition = await db.query.exerciseDefinitions.findFirst({
-            where: eq(exerciseDefinitions.id, exerciseDefId),
+            where: and(
+              eq(exerciseDefinitions.id, exerciseDefId),
+              visibleExerciseCondition(userId),
+            ),
           });
 
           if (!definition) {

@@ -26,6 +26,7 @@ export const exerciseDefinitions = pgTable('exercise_definitions', {
   isCustom: boolean('is_custom').default(false).notNull(),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => {
   return {
     nameIdx: index('exercise_definitions_name_idx').on(table.name),
