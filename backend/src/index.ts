@@ -4,9 +4,19 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
+import { randomUUID } from 'crypto';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import * as Sentry from '@sentry/node';
+
+declare global {
+  namespace Express {
+    interface Request {
+      id: string;
+    }
+  }
+}
 
 // Load env files
 const __filename = fileURLToPath(import.meta.url);
@@ -14,12 +24,21 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config();
 
+// Read directly off the monorepo's package.json rather than a JSON import
+// attribute, to avoid any Node-version compatibility risk — this is the
+// version actually bumped per release and tracked in CHANGELOG.md.
+const rootPackageJson = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8'),
+);
+const appVersion: string = rootPackageJson.version;
+
 // Sentry is entirely opt-in: without a DSN the SDK is never initialized, so
 // the captureException call in the error handler below becomes a no-op.
 if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
+    release: `workout-tracker-backend@${appVersion}`,
     tracesSampleRate: 0.1,
   });
 }
@@ -42,6 +61,8 @@ import { exercisesRouter } from './routes/exercises.js';
 import { progressRouter } from './routes/progress.js';
 import { measurementsRouter } from './routes/measurements.js';
 import { recordRequest, getMetricsSnapshot } from './metrics.js';
+import { recordVital, getVitalsSnapshot, VITAL_NAMES } from './webVitalsMetrics.js';
+import { pool } from './db/index.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -56,13 +77,21 @@ app.set('trust proxy', 1);
 // requests in both the console log and the /metrics counters below.
 // Recorded on 'finish' (not immediately) so the log line and metrics
 // reflect the actual response status and duration.
+//
+// Each request also gets a random id, echoed back as X-Request-Id and
+// included in the log line, so a single request can be traced across the
+// console log, /metrics, and (once tagged in the error handler below) a
+// Sentry event — without it, correlating those three during an incident
+// means matching timestamps by hand.
 app.use((req: Request, res: Response, next: NextFunction) => {
+  req.id = randomUUID();
+  res.setHeader('X-Request-Id', req.id);
   const startedAt = Date.now();
   res.on('finish', () => {
     const durationMs = Date.now() - startedAt;
     recordRequest(req, res.statusCode);
     console.log(
-      `[${new Date().toISOString()}] ${req.method} ${req.path} ${res.statusCode} ${durationMs}ms`,
+      `[${new Date().toISOString()}] [${req.id}] ${req.method} ${req.path} ${res.statusCode} ${durationMs}ms`,
     );
   });
   next();
@@ -112,13 +141,29 @@ const refreshLimiter = rateLimit({
   message: { error: 'Too many token refresh requests. Please wait a moment.' },
 });
 
+const vitalsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/auth/login', authLimiter);
 app.use('/auth/register', authLimiter);
 app.use('/auth/refresh', refreshLimiter);
+app.use('/vitals', vitalsLimiter);
 
-// Healthcheck
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+// Healthcheck — actually checks DB connectivity rather than just confirming
+// the process is up, since "app alive, database unreachable" is the most
+// common real failure mode and a static {status:'ok'} would mask it from
+// any external uptime monitor pointed at this endpoint.
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', time: new Date().toISOString() });
+  } catch (err) {
+    res.status(503).json({ status: 'error', time: new Date().toISOString() });
+  }
 });
 
 // Request/error-rate counters, in-memory and per-process — reset on
@@ -126,6 +171,28 @@ app.get('/health', (req: Request, res: Response) => {
 // enough to answer "what's our error rate" for a single Render dyno.
 app.get('/metrics', (req: Request, res: Response) => {
   res.json(getMetricsSnapshot());
+});
+
+// Real-user Web Vitals, reported by the frontend via sendBeacon in
+// production builds only (see frontend/src/lib/webVitals.ts). Same
+// in-memory/per-process tradeoff as /metrics — a live snapshot, not
+// history.
+app.post('/vitals', (req: Request, res: Response) => {
+  const { name, value } = req.body ?? {};
+  if (
+    typeof name !== 'string' ||
+    !VITAL_NAMES.includes(name as (typeof VITAL_NAMES)[number]) ||
+    typeof value !== 'number' ||
+    !Number.isFinite(value)
+  ) {
+    return res.status(400).json({ error: 'Invalid vital payload' });
+  }
+  recordVital(name as (typeof VITAL_NAMES)[number], value);
+  res.status(204).end();
+});
+
+app.get('/vitals', (req: Request, res: Response) => {
+  res.json(getVitalsSnapshot());
 });
 
 // API Routes
@@ -142,13 +209,18 @@ app.use((req: Request, res: Response) => {
 
 // Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled Server Error:', err);
+  console.error(`Unhandled Server Error [${req.id}]:`, err);
   // Sentry.setupExpressErrorHandler's auto-instrumentation needs Express
   // patched via `node --import` before it's first imported, which this
   // ESM dev/start setup (tsx, no --import) doesn't do — so we call
-  // captureException directly here instead, which works regardless.
+  // captureException directly here instead, which works regardless. Tagging
+  // with the request id lets a Sentry event be matched back to the exact
+  // log line above.
   if (process.env.SENTRY_DSN) {
-    Sentry.captureException(err);
+    Sentry.withScope((scope) => {
+      scope.setTag('request_id', req.id);
+      Sentry.captureException(err);
+    });
   }
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
@@ -156,7 +228,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 import { seedExercises } from './db/seed.js';
-import { pool } from './db/index.js';
 import { verifySchemaSync } from './db/verifySchemaSync.js';
 
 // Refuse to start if schema.ts has columns the connected database doesn't
