@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2026-07-15
+
+### Added
+
+- `GET /health` now checks real database connectivity (previously a static `{status:'ok'}`), returning 503 if the database is unreachable so an uptime monitor can actually detect a DB outage instead of seeing a false "healthy".
+- Real-user Web Vitals (CLS, FCP, INP, LCP, TTFB) are now reported to the backend in production via `POST /vitals`, aggregated in-memory (p50/p75/p95 per metric) and readable via `GET /vitals` — previously this data only existed in a dev-only console log.
+- Every backend request now gets a random request id, included in the console log line, returned as an `X-Request-Id` response header, and tagged on any Sentry event the request produces — so a single request can be traced across the log, `/metrics`, and Sentry instead of matching timestamps by hand.
+- Sentry events on both backend and frontend are now tagged with the app's release version, so once real traffic exists it's possible to tell which deploy a given error started appearing after.
+- Frontend production builds can now upload source maps to Sentry for readable stack traces, opt-in via a `SENTRY_AUTH_TOKEN` build-time secret (alongside `SENTRY_ORG`/`SENTRY_PROJECT`) — skipped entirely, with no effect on the build, if unset.
+
 ## [1.1.3] - 2026-07-15
 
 ### Added
