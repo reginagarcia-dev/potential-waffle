@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - `GET /health`'s new database check now logs the underlying error (console + Sentry, tagged with the request id) on failure instead of silently swallowing it, and is raced against its own 3-second timeout instead of the connection pool's full 10-second timeout, so it fails fast with a clear signal rather than reading as a worse outage than it is under a merely-busy pool.
 - `GET /health` is now rate-limited like the other public, unauthenticated endpoints, since it now does a real database query per call and was otherwise an unprotected way to consume connection-pool capacity.
 - `POST /vitals` and `GET /vitals` now have separate rate-limit budgets instead of sharing one — a dashboard polling the read endpoint could previously exhaust the shared budget and cause real browser-reported vitals to be silently dropped (`sendBeacon` never surfaces a failed request back to calling code).
+- The in-memory Web Vitals buffer now uses a fixed-size ring buffer instead of `Array.shift()` for eviction (O(1) instead of O(n) per write once full), and caches its sorted percentile view between writes instead of re-sorting on every `GET /vitals` poll.
 
 ## [1.1.3] - 2026-07-15
 
