@@ -61,7 +61,7 @@ import { exercisesRouter } from './routes/exercises.js';
 import { progressRouter } from './routes/progress.js';
 import { measurementsRouter } from './routes/measurements.js';
 import { recordRequest, getMetricsSnapshot } from './metrics.js';
-import { recordVital, getVitalsSnapshot, VITAL_NAMES } from './webVitalsMetrics.js';
+import { recordVital, getVitalsSnapshot, isVitalName } from './webVitalsMetrics.js';
 import { pool } from './db/index.js';
 
 const app = express();
@@ -141,9 +141,33 @@ const refreshLimiter = rateLimit({
   message: { error: 'Too many token refresh requests. Please wait a moment.' },
 });
 
-const vitalsLimiter = rateLimit({
+// One page load fires up to 5 vitals (CLS/FCP/INP/LCP/TTFB), so a handful
+// of tabs/reloads behind a shared IP can add up fast — sized generously so
+// legitimate bursts don't get silently dropped (sendBeacon never surfaces
+// a 429 to calling code, so a too-tight limit here would just quietly
+// under-sample real traffic with no visible error anywhere). Read and
+// write are limited separately so a dashboard polling GET /vitals can't
+// starve real beacon POSTs of their own budget.
+const vitalsPostLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const vitalsGetLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// /health now does a real DB round-trip (see below), so — like the other
+// public, unauthenticated endpoints above — it needs its own limiter to
+// stop it being used to exhaust the connection pool.
+const healthLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -151,17 +175,36 @@ const vitalsLimiter = rateLimit({
 app.use('/auth/login', authLimiter);
 app.use('/auth/register', authLimiter);
 app.use('/auth/refresh', refreshLimiter);
-app.use('/vitals', vitalsLimiter);
+app.use('/health', healthLimiter);
 
 // Healthcheck — actually checks DB connectivity rather than just confirming
 // the process is up, since "app alive, database unreachable" is the most
 // common real failure mode and a static {status:'ok'} would mask it from
-// any external uptime monitor pointed at this endpoint.
+// any external uptime monitor pointed at this endpoint. Raced against a
+// short timeout (independent of the pool's own connectionTimeoutMillis) so
+// a merely-busy-but-healthy pool fails fast into a clear signal instead of
+// blocking the full pool timeout and reading as a worse outage than it is.
+const HEALTH_CHECK_TIMEOUT_MS = 3000;
 app.get('/health', async (req: Request, res: Response) => {
   try {
-    await pool.query('SELECT 1');
+    await Promise.race([
+      pool.query('SELECT 1'),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Health check DB query timed out')),
+          HEALTH_CHECK_TIMEOUT_MS,
+        ),
+      ),
+    ]);
     res.json({ status: 'ok', time: new Date().toISOString() });
   } catch (err) {
+    console.error(`Health check DB query failed [${req.id}]:`, err);
+    if (process.env.SENTRY_DSN) {
+      Sentry.withScope((scope) => {
+        scope.setTag('request_id', req.id);
+        Sentry.captureException(err);
+      });
+    }
     res.status(503).json({ status: 'error', time: new Date().toISOString() });
   }
 });
@@ -177,21 +220,16 @@ app.get('/metrics', (req: Request, res: Response) => {
 // production builds only (see frontend/src/lib/webVitals.ts). Same
 // in-memory/per-process tradeoff as /metrics — a live snapshot, not
 // history.
-app.post('/vitals', (req: Request, res: Response) => {
+app.post('/vitals', vitalsPostLimiter, (req: Request, res: Response) => {
   const { name, value } = req.body ?? {};
-  if (
-    typeof name !== 'string' ||
-    !VITAL_NAMES.includes(name as (typeof VITAL_NAMES)[number]) ||
-    typeof value !== 'number' ||
-    !Number.isFinite(value)
-  ) {
+  if (!isVitalName(name) || typeof value !== 'number' || !Number.isFinite(value)) {
     return res.status(400).json({ error: 'Invalid vital payload' });
   }
-  recordVital(name as (typeof VITAL_NAMES)[number], value);
+  recordVital(name, value);
   res.status(204).end();
 });
 
-app.get('/vitals', (req: Request, res: Response) => {
+app.get('/vitals', vitalsGetLimiter, (req: Request, res: Response) => {
   res.json(getVitalsSnapshot());
 });
 

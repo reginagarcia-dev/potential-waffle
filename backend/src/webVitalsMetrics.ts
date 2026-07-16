@@ -1,6 +1,10 @@
 export const VITAL_NAMES = ['CLS', 'FCP', 'INP', 'LCP', 'TTFB'] as const;
 type VitalName = (typeof VITAL_NAMES)[number];
 
+export function isVitalName(name: unknown): name is VitalName {
+  return typeof name === 'string' && (VITAL_NAMES as readonly string[]).includes(name);
+}
+
 // Bounded ring buffer per metric so memory doesn't grow unboundedly with
 // traffic — recent samples are what matter for a live percentile view.
 const MAX_SAMPLES_PER_VITAL = 500;
