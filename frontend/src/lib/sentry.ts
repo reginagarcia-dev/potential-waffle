@@ -15,6 +15,7 @@ export function initSentry() {
   Sentry.init({
     dsn,
     environment: import.meta.env.MODE,
+    release: `workout-tracker-frontend@${__APP_VERSION__}`,
   });
 }
 

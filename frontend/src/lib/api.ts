@@ -3,7 +3,7 @@
 // browser tracking protections. Routing through Vercel's /api rewrite makes
 // the API same-origin from the browser's perspective, keeping the cookie
 // first-party.
-const BASE_URL = import.meta.env.PROD
+export const BASE_URL = import.meta.env.PROD
   ? "/api"
   : (import.meta.env.VITE_API_URL ?? "http://localhost:4000");
 const AUTH_SESSION_INVALIDATED_EVENT = "workout-tracker:session-invalidated";
