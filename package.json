@@ -14,6 +14,9 @@
     "build": "npm run build --workspaces --if-present",
     "db:generate": "npm run db:generate --workspace=backend",
     "db:push": "npm run db:push --workspace=backend",
-    "db:studio": "npm run db:studio --workspace=backend"
+    "db:studio": "npm run db:studio --workspace=backend",
+    "cap:sync": "npm run build --workspace=frontend && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 npm exec --workspace=frontend -- cap sync",
+    "cap:ios": "npm run cap:sync && npm exec --workspace=frontend -- cap open ios",
+    "cap:android": "npm run cap:sync && npm exec --workspace=frontend -- cap open android"
   }
 }

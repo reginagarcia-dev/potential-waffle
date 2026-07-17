@@ -126,7 +126,7 @@ export const WorkoutSummaryPage: React.FC = () => {
   });
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background px-4 py-5 pb-24 text-foreground">
+    <div className="flex flex-col bg-background px-4 py-5 pb-24 text-foreground">
       {/* Header */}
       <header className="flex items-center gap-3">
         <div className="min-w-0">
@@ -300,7 +300,7 @@ export const WorkoutSummaryPage: React.FC = () => {
       )}
 
       {/* Done CTA */}
-      <div className="sticky bottom-4 mt-auto pt-6">
+      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4 pb-4">
         <ProductButton fullWidth onClick={() => navigate("/")}>
           Done
         </ProductButton>

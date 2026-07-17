@@ -104,6 +104,9 @@ app.use(helmet());
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:5173',
   'http://127.0.0.1:5173',
+  // Capacitor's iOS WebView serves the app from this fixed custom scheme.
+  // Android is served over https://localhost, already matched by the regex below.
+  'capacitor://localhost',
 ];
 
 app.use(cors({

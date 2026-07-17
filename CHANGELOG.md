@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.6] - 2026-07-16
+
+### Added
+
+- Native iOS and Android app scaffolding via Capacitor (`npm run cap:ios` / `cap:android`) — the existing web app can now be built and run as a native mobile shell. Not yet store-ready: auth token persistence, native capability wiring (haptics, status bar, back button, rest-timer alarm), and app icons are still pending.
+- Backend CORS allowlist now accepts the Capacitor iOS WebView origin (`capacitor://localhost`); Android's `https://localhost` was already covered by the existing pattern.
+
+### Fixed
+
+- Workout summary "Done" button was hidden behind the bottom navigation bar on first paint, caused by a duplicate `min-h-dvh` nested inside the app shell's own full-height container. Switched to the same fixed-position CTA pattern used elsewhere in the app.
+
 ## [1.1.5] - 2026-07-15
 
 ### Fixed
