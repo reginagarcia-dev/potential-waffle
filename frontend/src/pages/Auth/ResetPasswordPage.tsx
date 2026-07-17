@@ -7,8 +7,10 @@ import { Spinner } from "@/components/ui/Spinner";
 import { AuthCardShell } from "@/components/Auth/AuthCardShell";
 import { AuthTextField } from "@/components/Auth/AuthTextField";
 import { AuthErrorBanner } from "@/components/Auth/AuthErrorBanner";
+import { useSeo } from "@/lib/seo";
 
 export function ResetPasswordPage() {
+  useSeo({ title: "Reset password — ArqLift", noindex: true });
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token") ?? "";

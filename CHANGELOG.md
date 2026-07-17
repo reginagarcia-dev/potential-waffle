@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.8] - 2026-07-17
+
+### Added
+
+- SEO metadata: `robots.txt`, `sitemap.xml`, and per-route canonical/`og:*`/Twitter-card tags (public marketing and contact pages indexable; auth pages `noindex`), plus `SoftwareApplication` JSON-LD on the marketing page.
+
+### Changed
+
+- Rebranded from "Arc" to "ArqLift" across the page title, meta description, PWA manifest, transactional email templates, and the native app's Capacitor identifiers.
+
 ## [1.1.7] - 2026-07-17
 
 ### Added

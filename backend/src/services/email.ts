@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = process.env.RESEND_FROM_EMAIL || 'Arc <noreply@yourdomain.com>';
+const FROM = process.env.RESEND_FROM_EMAIL || 'ArqLift <noreply@yourdomain.com>';
 // Where contact-form submissions get sent — falls back to console logging
 // (like the missing-RESEND_API_KEY case below) rather than silently sending
 // nowhere if this hasn't been configured.
@@ -16,12 +16,12 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
   await resend.emails.send({
     from: FROM,
     to,
-    subject: 'Reset your Arc password',
+    subject: 'Reset your ArqLift password',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#030b14;color:#eaf4ff;border-radius:16px">
         <div style="margin-bottom:32px">
           <h1 style="font-size:24px;font-weight:700;margin:0;color:#eaf4ff">Reset your password</h1>
-          <p style="font-size:14px;color:#6f859c;margin:8px 0 0">You requested a password reset for your Arc account.</p>
+          <p style="font-size:14px;color:#6f859c;margin:8px 0 0">You requested a password reset for your ArqLift account.</p>
         </div>
         <a href="${resetUrl}" style="display:inline-block;background:#06c7c8;color:#030b14;font-weight:700;font-size:15px;padding:14px 28px;border-radius:10px;text-decoration:none">
           Reset Password
@@ -48,7 +48,7 @@ export async function sendFeedbackNotification(fromEmail: string, message: strin
     from: FROM,
     to: FEEDBACK_TO,
     replyTo: fromEmail,
-    subject: 'New Arc contact form submission',
+    subject: 'New ArqLift contact form submission',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#030b14;color:#eaf4ff;border-radius:16px">
         <h1 style="font-size:20px;font-weight:700;margin:0 0 16px;color:#eaf4ff">New feedback</h1>

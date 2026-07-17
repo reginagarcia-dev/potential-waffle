@@ -8,8 +8,15 @@ import { Spinner } from "@/components/ui/Spinner";
 import { AuthCardShell } from "@/components/Auth/AuthCardShell";
 import { AuthTextField } from "@/components/Auth/AuthTextField";
 import { AuthErrorBanner } from "@/components/Auth/AuthErrorBanner";
+import { useSeo } from "@/lib/seo";
 
 export function ContactPage() {
+  useSeo({
+    title: "Contact us — ArqLift",
+    description: "Questions, feedback, or bug reports — get in touch with the ArqLift team.",
+    canonical: "https://www.arqlift.com/contact",
+  });
+
   const { user } = useAuth();
   const [email, setEmail] = useState(user?.email ?? "");
   const [message, setMessage] = useState("");

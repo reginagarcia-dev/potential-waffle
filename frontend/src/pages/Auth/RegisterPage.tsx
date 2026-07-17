@@ -6,8 +6,10 @@ import { Spinner } from "@/components/ui/Spinner";
 import { AuthCardShell } from "@/components/Auth/AuthCardShell";
 import { AuthTextField } from "@/components/Auth/AuthTextField";
 import { AuthErrorBanner } from "@/components/Auth/AuthErrorBanner";
+import { useSeo } from "@/lib/seo";
 
 export const RegisterPage: React.FC = () => {
+  useSeo({ title: "Sign up — ArqLift", noindex: true });
   const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");

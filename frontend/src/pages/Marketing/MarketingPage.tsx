@@ -17,7 +17,12 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
+import { useSeo } from "@/lib/seo";
 import "./marketing.css";
+
+const SITE_URL = "https://www.arqlift.com/";
+const DESCRIPTION =
+  "ArqLift keeps your workouts focused and your progress measurable. Capture sets, session notes, and long-term trends with a workflow that feels fast inside the gym.";
 
 const trustBadges = ["Free to start", "Set up in minutes", "Built for lifters"];
 
@@ -55,6 +60,27 @@ function HexMark({ className = "size-9" }: { className?: string }) {
 }
 
 export function MarketingPage() {
+  useSeo({
+    title: "ArqLift — Track every rep, set, and PR.",
+    description: DESCRIPTION,
+    canonical: SITE_URL,
+    og: {
+      url: SITE_URL,
+      // TODO: swap for a real 1200x630 brand image once one exists —
+      // apple-touch-icon.png (180x180) is a placeholder.
+      image: `${SITE_URL}apple-touch-icon.png`,
+    },
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "ArqLift",
+      applicationCategory: "HealthApplication",
+      operatingSystem: "Web, iOS, Android",
+      description: DESCRIPTION,
+      url: SITE_URL,
+    },
+  });
+
   const highlights = useMemo(
     () => [
       {

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.arc.workouttracker',
-  appName: 'Arc',
+  appId: 'com.arqlift.workouttracker',
+  appName: 'ArqLift',
   webDir: 'dist',
   server: {
     // Serve over https://localhost on Android so the auth refresh cookie's
