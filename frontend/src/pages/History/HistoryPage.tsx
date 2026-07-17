@@ -314,7 +314,10 @@ export const HistoryPage: React.FC = () => {
           title="No workouts recorded yet"
           description="Workouts you finish will be listed here, grouped by calendar month."
           action={
-            <ProductButton fullWidth onClick={() => navigate("/session/new")}>
+            <ProductButton
+              fullWidth
+              onClick={() => navigate("/app/session/new")}
+            >
               Log First Workout
             </ProductButton>
           }

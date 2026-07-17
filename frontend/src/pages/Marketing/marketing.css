@@ -1,0 +1,128 @@
+.mk-page {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  scroll-behavior: smooth;
+}
+
+.mk-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(
+      60rem 40rem at 80% -10%,
+      rgb(6 199 200 / 0.2),
+      transparent 60%
+    ),
+    radial-gradient(
+      44rem 28rem at 20% 10%,
+      rgb(56 84 124 / 0.22),
+      transparent 60%
+    ),
+    linear-gradient(160deg, rgb(8 14 26) 0%, rgb(4 9 18) 55%, rgb(6 15 30) 100%);
+}
+
+.mk-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 50% 20%, black 35%, transparent 85%);
+}
+
+.mk-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: mk-reveal 680ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.mk-delay-1 {
+  animation-delay: 120ms;
+}
+
+.mk-delay-2 {
+  animation-delay: 220ms;
+}
+
+.mk-delay-3 {
+  animation-delay: 340ms;
+}
+
+.mk-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.mk-shimmer::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: -20%;
+  width: 28%;
+  height: 180%;
+  transform: rotate(16deg);
+  background: linear-gradient(
+    110deg,
+    transparent 10%,
+    rgb(255 255 255 / 0.06) 45%,
+    rgb(255 255 255 / 0.18) 50%,
+    rgb(255 255 255 / 0.06) 55%,
+    transparent 90%
+  );
+  animation: mk-shimmer 5.2s ease-in-out infinite;
+}
+
+@keyframes mk-reveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mk-shimmer {
+  0% {
+    transform: translateX(-160%) rotate(16deg);
+  }
+  52%,
+  100% {
+    transform: translateX(430%) rotate(16deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .mk-page::after {
+    background-size: 34px 34px;
+  }
+
+  .mk-shimmer::after {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .mk-wordmark {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-page {
+    scroll-behavior: auto;
+  }
+
+  .mk-reveal {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .mk-shimmer::after {
+    animation: none;
+  }
+}

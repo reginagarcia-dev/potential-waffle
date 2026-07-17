@@ -89,11 +89,11 @@ export function TodayPage() {
     );
 
   const handleStartWorkout = () => {
-    navigate("/session/new");
+    navigate("/app/session/new");
   };
   const handleResumeWorkout = () => {
     if (activeSession) {
-      navigate(`/session/${activeSession.id}`);
+      navigate(`/app/session/${activeSession.id}`);
     }
   };
 
@@ -159,7 +159,7 @@ export function TodayPage() {
               recentPrs.length > 3 && (
                 <button
                   onClick={() =>
-                    navigate("/history", { state: { prOnly: true } })
+                    navigate("/app/history", { state: { prOnly: true } })
                   }
                   className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
                 >
@@ -190,7 +190,7 @@ export function TodayPage() {
               <button
                 key={session.id}
                 type="button"
-                onClick={() => navigate(`/history/${session.id}`)}
+                onClick={() => navigate(`/app/history/${session.id}`)}
                 className={`flex w-full items-center justify-between gap-3 text-left transition hover:opacity-80${idx > 0 ? " mt-4 border-t border-border pt-4" : ""}`}
               >
                 <div>
@@ -207,7 +207,7 @@ export function TodayPage() {
             ))}
             {recentSessions.length > 3 && (
               <button
-                onClick={() => navigate("/history")}
+                onClick={() => navigate("/app/history")}
                 className="mt-4 flex w-full items-center justify-center border-t border-border pt-4 text-xs font-semibold text-primary transition hover:text-primary/80"
               >
                 Show All

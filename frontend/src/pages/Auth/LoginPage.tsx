@@ -25,7 +25,7 @@ export const LoginPage: React.FC = () => {
     setSubmitting(true);
     try {
       await login({ email, password });
-      navigate("/");
+      navigate("/app");
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials.");
     } finally {

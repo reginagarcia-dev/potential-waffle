@@ -5,7 +5,11 @@ import { useAuth } from "../../context/AuthContext.js";
 import { apiFetch } from "../../lib/api.js";
 import { useRestTimerStore } from "../../stores/restTimerStore.js";
 import { useSessionMutations } from "@/hooks/useSessionMutations";
-import { WorkoutSessionResponse, WorkoutSetResponse, UpdateSetCommand } from "shared";
+import {
+  WorkoutSessionResponse,
+  WorkoutSetResponse,
+  UpdateSetCommand,
+} from "shared";
 import {
   ArrowLeft,
   FileText,
@@ -191,7 +195,7 @@ export function ActiveSessionPage() {
       <div className="flex flex-1 flex-col gap-4 px-4 py-5 pb-[calc(16rem+env(safe-area-inset-bottom))]">
         <header className="flex items-center justify-between gap-2">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/app")}
             className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           >
             <ArrowLeft className="size-5" />

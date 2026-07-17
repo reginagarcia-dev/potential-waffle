@@ -110,12 +110,13 @@ export function useSessionMutations(sessionId: string | undefined) {
   });
 
   const abandonSessionMutation = useMutation({
-    mutationFn: () => apiFetch(`/sessions/${sessionId}/abandon`, { method: "POST" }),
+    mutationFn: () =>
+      apiFetch(`/sessions/${sessionId}/abandon`, { method: "POST" }),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: sessionQueryKey });
       queryClient.setQueryData(["activeSession"], null);
       queryClient.invalidateQueries({ queryKey: ["activeSession"] });
-      navigate("/");
+      navigate("/app");
     },
   });
 

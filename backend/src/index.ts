@@ -60,6 +60,7 @@ import { sessionsRouter } from './routes/sessions.js';
 import { exercisesRouter } from './routes/exercises.js';
 import { progressRouter } from './routes/progress.js';
 import { measurementsRouter } from './routes/measurements.js';
+import { contactRouter } from './routes/contact.js';
 import { recordRequest, getMetricsSnapshot } from './metrics.js';
 import { recordVital, getVitalsSnapshot, isVitalName } from './webVitalsMetrics.js';
 import { pool } from './db/index.js';
@@ -175,10 +176,36 @@ const healthLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Public, unauthenticated, and triggers an outbound email per request —
+// tighter than authLimiter since there's no legitimate reason for one visitor
+// to submit many of these in a short window.
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages sent. Please try again later.' },
+});
+
+// Same shape as contactLimiter: public, unauthenticated, and emails an
+// address the caller doesn't have to prove they own — without this, nothing
+// stops someone from email-bombing an arbitrary inbox with reset links, or
+// burning through the Resend sending quota, by hitting this endpoint in a
+// loop with any address they choose.
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
+});
+
 app.use('/auth/login', authLimiter);
 app.use('/auth/register', authLimiter);
 app.use('/auth/refresh', refreshLimiter);
+app.use('/auth/forgot-password', forgotPasswordLimiter);
 app.use('/health', healthLimiter);
+app.use('/contact', contactLimiter);
 
 // Healthcheck — actually checks DB connectivity rather than just confirming
 // the process is up, since "app alive, database unreachable" is the most
@@ -242,6 +269,7 @@ app.use('/sessions', sessionsRouter);
 app.use('/exercises', exercisesRouter);
 app.use('/progress', progressRouter);
 app.use('/measurements', measurementsRouter);
+app.use('/contact', contactRouter);
 
 // 404
 app.use((req: Request, res: Response) => {

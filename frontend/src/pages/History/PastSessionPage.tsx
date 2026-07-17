@@ -44,7 +44,7 @@ export const PastSessionPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workoutHistory"] });
       queryClient.invalidateQueries({ queryKey: ["recentSessions"] });
-      navigate("/history");
+      navigate("/app/history");
     },
   });
 
@@ -78,7 +78,7 @@ export const PastSessionPage: React.FC = () => {
           This workout record may have been deleted.
         </p>
         <button
-          onClick={() => navigate("/history")}
+          onClick={() => navigate("/app/history")}
           className="mt-4 inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition hover:bg-muted/60"
         >
           Back to History
@@ -115,7 +115,7 @@ export const PastSessionPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate("/history")}
+            onClick={() => navigate("/app/history")}
             className="inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted/50 hover:text-foreground"
           >
             <ArrowLeft className="size-5" />

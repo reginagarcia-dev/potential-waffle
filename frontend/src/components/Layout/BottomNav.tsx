@@ -5,27 +5,27 @@ import { cn } from "@/lib/utils";
 const navItems = [
   {
     label: "Today",
-    to: "/",
+    to: "/app",
     icon: Home,
   },
   {
     label: "History",
-    to: "/history",
+    to: "/app/history",
     icon: Clock,
   },
   {
     label: "Progress",
-    to: "/progress",
+    to: "/app/progress",
     icon: BarChart3,
   },
   {
     label: "Body",
-    to: "/measurements",
+    to: "/app/measurements",
     icon: Ruler,
   },
   {
     label: "Settings",
-    to: "/settings",
+    to: "/app/settings",
     icon: Settings,
   },
 ];

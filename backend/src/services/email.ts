@@ -2,6 +2,10 @@ import { Resend } from 'resend';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = process.env.RESEND_FROM_EMAIL || 'Arc <noreply@yourdomain.com>';
+// Where contact-form submissions get sent — falls back to console logging
+// (like the missing-RESEND_API_KEY case below) rather than silently sending
+// nowhere if this hasn't been configured.
+const FEEDBACK_TO = process.env.FEEDBACK_EMAIL_TO;
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   if (!resend) {
@@ -29,6 +33,27 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
         <p style="font-size:12px;color:#6f859c;margin-top:8px;word-break:break-all">
           Or copy this link: ${resetUrl}
         </p>
+      </div>
+    `,
+  });
+}
+
+export async function sendFeedbackNotification(fromEmail: string, message: string): Promise<void> {
+  if (!resend || !FEEDBACK_TO) {
+    console.log(`[email] Contact form submission from ${fromEmail}: ${message}`);
+    return;
+  }
+
+  await resend.emails.send({
+    from: FROM,
+    to: FEEDBACK_TO,
+    replyTo: fromEmail,
+    subject: 'New Arc contact form submission',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 24px;background:#030b14;color:#eaf4ff;border-radius:16px">
+        <h1 style="font-size:20px;font-weight:700;margin:0 0 16px;color:#eaf4ff">New feedback</h1>
+        <p style="font-size:13px;color:#6f859c;margin:0 0 16px">From: ${fromEmail}</p>
+        <p style="font-size:15px;white-space:pre-wrap;margin:0">${message}</p>
       </div>
     `,
   });

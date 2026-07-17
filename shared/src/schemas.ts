@@ -160,6 +160,17 @@ export const measurementSchema = z.object({
 
 export type MeasurementInput = z.input<typeof measurementSchema>;
 
+export const contactSchema = z.object({
+  email: z.string().email("Invalid email address").max(254, "Email is too long"),
+  message: z
+    .string()
+    .trim()
+    .min(1, "Message is required")
+    .max(2000, "Message must be at most 2000 characters"),
+});
+
+export type ContactInput = z.input<typeof contactSchema>;
+
 export const customExerciseSchema = z.object({
   name: z
     .string()

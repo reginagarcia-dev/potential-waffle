@@ -1,9 +1,11 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.js';
-import { Spinner } from '../ui/Spinner';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.js";
+import { Spinner } from "../ui/Spinner";
 
-export const PublicGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const PublicGuard: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -12,7 +14,7 @@ export const PublicGuard: React.FC<{ children: React.ReactNode }> = ({ children 
   }
 
   if (user) {
-    const from = (location.state as any)?.from?.pathname || '/';
+    const from = (location.state as any)?.from?.pathname || "/app";
     return <Navigate to={from} replace />;
   }
 

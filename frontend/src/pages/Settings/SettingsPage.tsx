@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.js";
-import { LogOut, Timer, ShieldCheck } from "lucide-react";
+import { LogOut, Mail, Timer, ShieldCheck } from "lucide-react";
 import { ProductButton } from "@/components/ui/ProductButton";
 import { REST_DURATION_OPTIONS_SECONDS } from "shared";
 import { formatRestDurationLabel } from "@/lib/restDuration";
@@ -128,6 +129,14 @@ export const SettingsPage: React.FC = () => {
             {user?.email}
           </span>
         </div>
+
+        <Link
+          to="/contact"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 text-sm font-semibold text-foreground transition hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <Mail className="h-4 w-4" />
+          Contact Us
+        </Link>
 
         <button
           onClick={logout}

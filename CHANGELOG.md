@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.7] - 2026-07-17
+
+### Added
+
+- Public marketing/landing page at `/` — hero, feature highlights, and a preview of the real workout-logging and progress-chart UI, with sign-up/log-in entry points into the app.
+- Authenticated app routes now live under `/app/*` (e.g. `/app/history`, `/app/session/:id`) instead of the root path, freeing up `/` for the new marketing page.
+- Contact form (`/contact`) for feedback and support requests — reachable publicly and from Settings for logged-in users (prefills their account email), emails submissions via Resend with reply-to set to the sender, and rate-limited like the other public endpoints.
+- Vercel Analytics.
+
+### Fixed
+
+- `POST /auth/forgot-password` is now rate-limited (5 requests / 15 minutes) — previously unlimited despite sending an email per request, which let anyone email-bomb an arbitrary inbox with reset links or exhaust the Resend sending quota.
+
+### Changed
+
+- Bumped `drizzle-orm`, `drizzle-kit`, and `vitest` to their latest major versions.
+
+### Removed
+
+- Dead `AppLayout.tsx` component, superseded by `AppShell`/`BottomNav` and no longer referenced anywhere.
+
 ## [1.1.6] - 2026-07-16
 
 ### Added

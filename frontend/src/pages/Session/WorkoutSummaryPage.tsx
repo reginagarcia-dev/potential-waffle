@@ -66,7 +66,7 @@ export const WorkoutSummaryPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/app")}
             className="mt-4 inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-4 text-sm font-semibold text-foreground transition hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-ring"
           >
             Go Back Home
@@ -301,7 +301,7 @@ export const WorkoutSummaryPage: React.FC = () => {
 
       {/* Done CTA */}
       <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4 pb-4">
-        <ProductButton fullWidth onClick={() => navigate("/")}>
+        <ProductButton fullWidth onClick={() => navigate("/app")}>
           Done
         </ProductButton>
       </div>
