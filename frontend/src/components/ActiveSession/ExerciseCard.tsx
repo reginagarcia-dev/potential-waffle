@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { SessionExerciseResponse, WorkoutSetResponse } from "shared";
 import { SetRow } from "./SetRow";
 import { DeleteExerciseSheet } from "./DeleteExerciseSheet";
+import { SuggestionBanner } from "./SuggestionBanner";
+import { useLastPerformance } from "@/hooks/useLastPerformance";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 
 interface ExerciseCardProps {
@@ -13,6 +15,8 @@ interface ExerciseCardProps {
   onDeleteExercise: (exerciseId: string) => void;
   onTriggerSetEdit: (set: WorkoutSetResponse) => void;
   onUpdateSetValue: (set: WorkoutSetResponse, field: "weight" | "reps", value: number | null) => void;
+  onApplySuggestion: (exerciseId: string, weight: number, reps: number | null) => void;
+  isApplyingSuggestion?: boolean;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -24,9 +28,27 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   onDeleteExercise,
   onTriggerSetEdit,
   onUpdateSetValue,
+  onApplySuggestion,
+  isApplyingSuggestion,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+
+  const { data: lastPerformance } = useLastPerformance(
+    exercise.exerciseDefinitionId,
+    unit,
+  );
+
+  const workingSets = exercise.sets.filter((s) => s.type === "working");
+  const anyWorkingSetTouched = workingSets.some(
+    (s) => s.status === "completed" || s.weight != null || s.reps != null,
+  );
+  const showSuggestion =
+    !suggestionDismissed &&
+    workingSets.length > 0 &&
+    !anyWorkingSetTouched &&
+    !!lastPerformance?.suggestion;
 
   let workingSetDisplayNumber = 0;
 
@@ -65,6 +87,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             </div>
           </div>
         </div>
+
+        {showSuggestion && lastPerformance!.suggestion && (
+          <SuggestionBanner
+            suggestion={lastPerformance!.suggestion}
+            unit={unit}
+            isApplying={isApplyingSuggestion}
+            onApply={() =>
+              onApplySuggestion(
+                exercise.id,
+                lastPerformance!.suggestion!.weight,
+                lastPerformance!.suggestion!.reps,
+              )
+            }
+            onDismiss={() => setSuggestionDismissed(true)}
+          />
+        )}
 
         {/* Sets list */}
         {isExpanded && (

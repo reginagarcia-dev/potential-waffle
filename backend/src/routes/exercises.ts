@@ -11,9 +11,10 @@ import {
   visibleExerciseCondition,
   ownedCustomExerciseCondition,
 } from "../db/exerciseQueries.js";
-import { customExerciseSchema } from "shared";
+import { customExerciseSchema, convertWeight, Unit } from "shared";
 import { authenticateToken, AuthenticatedRequest } from "../middleware/auth.js";
 import { sanitizeText } from "../utils/sanitize.js";
+import { computeProgressionSuggestion } from "../utils/progressionSuggestion.js";
 
 export const exercisesRouter = Router();
 
@@ -210,12 +211,14 @@ exercisesRouter.get(
     try {
       const exerciseDefId = req.params.id;
       const userId = req.userId!;
+      const targetUnit: Unit = req.query.unit === "kg" ? "kg" : "lbs";
 
       // Find the most recent completed workout session containing this exercise
       const recentExerciseRow = await db
         .select({
           sessionExerciseId: sessionExercises.id,
           completedAt: workoutSessions.completedAt,
+          sourceUnit: workoutSessions.unit,
         })
         .from(sessionExercises)
         .innerJoin(
@@ -239,10 +242,11 @@ exercisesRouter.get(
           lastRpe: null,
           lastSetsCount: 0,
           lastSets: [],
+          suggestion: null,
         });
       }
 
-      const exerciseId = recentExerciseRow[0].sessionExerciseId;
+      const { sessionExerciseId: exerciseId, sourceUnit } = recentExerciseRow[0];
 
       // Fetch sets for that performance
       const performanceSets = await db
@@ -250,6 +254,19 @@ exercisesRouter.get(
         .from(sets)
         .where(eq(sets.exerciseId, exerciseId))
         .orderBy(asc(sets.setNumber));
+
+      // weightKg is the unit-agnostic source of truth; only fall back to the
+      // raw (source-session-unit) weight column for sets that predate weightKg
+      // being populated or were never logged.
+      const toTargetUnit = (
+        weightKg: number | null,
+        rawWeight: number | null,
+      ): number | null => {
+        if (weightKg != null) return convertWeight(weightKg, "kg", targetUnit);
+        if (rawWeight != null)
+          return convertWeight(rawWeight, sourceUnit, targetUnit);
+        return null;
+      };
 
       // Calculate representatives (e.g. from the first working set or average)
       // We'll return the values from the first completed working set, or just the first set.
@@ -259,17 +276,51 @@ exercisesRouter.get(
       const representativeSet =
         workingSets.length > 0 ? workingSets[0] : performanceSets[0];
 
+      const representativeWeight = representativeSet
+        ? toTargetUnit(representativeSet.weightKg, representativeSet.weight)
+        : null;
+
+      // Unlike representativeSet above (which may fall back to a warmup or
+      // incomplete set for display purposes), the suggestion is actionable —
+      // it gets written to every pending working set on "Apply" — so it must
+      // only be based on an actually-completed working set.
+      let suggestion = null;
+      const suggestionSet = workingSets.length > 0 ? workingSets[0] : null;
+      const suggestionWeight = suggestionSet
+        ? toTargetUnit(suggestionSet.weightKg, suggestionSet.weight)
+        : null;
+      if (
+        suggestionSet &&
+        suggestionWeight != null &&
+        suggestionSet.reps != null &&
+        suggestionSet.reps > 0
+      ) {
+        const exerciseDefinition = await db.query.exerciseDefinitions.findFirst(
+          { where: eq(exerciseDefinitions.id, exerciseDefId) },
+        );
+        if (exerciseDefinition) {
+          suggestion = computeProgressionSuggestion({
+            muscleGroup: exerciseDefinition.muscleGroup,
+            lastWeight: suggestionWeight,
+            lastReps: suggestionSet.reps,
+            lastRpe: suggestionSet.rpe,
+            targetUnit,
+          });
+        }
+      }
+
       return res.json({
-        lastWeight: representativeSet?.weight ?? null,
+        lastWeight: representativeWeight,
         lastReps: representativeSet?.reps ?? null,
         lastRpe: representativeSet?.rpe ?? null,
         lastSetsCount: performanceSets.length,
         lastSets: performanceSets.map((s) => ({
-          weight: s.weight ?? 0,
+          weight: toTargetUnit(s.weightKg, s.weight) ?? 0,
           reps: s.reps ?? 0,
           rpe: s.rpe ?? null,
           type: s.type,
         })),
+        suggestion,
       });
     } catch (error) {
       next(error);

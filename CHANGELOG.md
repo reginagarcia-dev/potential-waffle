@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-07-23
+
+### Added
+
+- Smart progression suggestions in Active Session: a dismissible banner on each exercise card recommends the next working set's weight/reps from last session's RPE (`backend/src/utils/progressionSuggestion.ts`) — RPE ≤7 increases weight, RPE ≥9 holds, in between holds weight and adds a rep, and no usable RPE (or no completed working set) falls back to a safe repeat rather than guessing. "Apply" writes the suggestion to every pending working set via the `apply_overload_suggestion` mutation; `GET /exercises/:id/last-performance` now accepts `?unit=kg|lbs` and returns the computed `suggestion` alongside unit-converted weights.
+
 ## [1.1.8] - 2026-07-17
 
 ### Added
