@@ -104,7 +104,7 @@ export function MarketingPage() {
 
   return (
     <div className="mk-page min-h-dvh overflow-x-clip text-foreground">
-      <header className="sticky top-[env(safe-area-inset-top)] z-40 border-b border-line-subtle bg-background/70 backdrop-blur-lg">
+      <header className="sticky top-0 z-40 border-b border-line-subtle bg-background/70 pt-[env(safe-area-inset-top)] backdrop-blur-lg">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4 lg:px-10">
           <Link to="/" className="group inline-flex items-center gap-3">
             <HexMark />

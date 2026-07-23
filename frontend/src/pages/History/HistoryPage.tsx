@@ -182,7 +182,7 @@ export const HistoryPage: React.FC = () => {
     return (
       <div
         key={session.id}
-        onClick={() => navigate(`/history/${session.id}`)}
+        onClick={() => navigate(`/app/history/${session.id}`)}
         className="group flex cursor-pointer items-center justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-border/70 hover:bg-surface"
       >
         <div className="min-w-0 flex-1 space-y-1.5 pr-4">

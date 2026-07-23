@@ -69,7 +69,7 @@ export const StartWorkoutPage: React.FC = () => {
       // Invalidate active session query cache
       queryClient.invalidateQueries({ queryKey: ["activeSession"] });
       // Redirect to the active session workspace
-      navigate(`/session/${data.id}`);
+      navigate(`/app/session/${data.id}`);
     },
     onError: (err: any) => {
       setError(err.message || "Failed to start workout session");

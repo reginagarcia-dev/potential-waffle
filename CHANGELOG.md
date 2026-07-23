@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2026-07-23
+
+### Fixed
+
+- Starting a workout (blank or from an existing template), opening a past session from History, and finishing an active workout all redirected to the marketing page instead of the intended screen — each `navigate()` call was missing the `/app` prefix that every authenticated route now lives under, so the path matched no route and fell through to the catch-all redirect to `/`.
+
+## [1.2.2] - 2026-07-23
+
+### Fixed
+
+- The 1.2.1 safe-area fix for the marketing page header (`top-[env(safe-area-inset-top)]`) fixed the notch clipping but introduced a new overlap: since the page has no reserved top-inset spacer (unlike the logged-in app's `AppShell`), the sticky header snapped down by the inset immediately, without growing its own box, and covered the hero's "Performance Tracking For Lifters" pill underneath it. Switched to `sticky top-0` with `pt-[env(safe-area-inset-top)]` so the header's box grows to include the inset instead of shifting position — no overlap on notched devices, unchanged on everything else.
+
 ## [1.2.1] - 2026-07-23
 
 ### Fixed
