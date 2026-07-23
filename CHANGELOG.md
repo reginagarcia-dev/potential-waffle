@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2026-07-23
+
+### Fixed
+
+- Marketing page header was pinned with `sticky top-0`, unlike every other header in the app — in standalone/home-screen mode on iOS, the non-zero safe-area-inset-top meant the header sat flush under the status bar/notch, clipping the logo and the "Log in"/"Get Started Free" buttons out of tappable range. Now uses `top-[env(safe-area-inset-top)]` like the rest of the app.
+
 ## [1.2.0] - 2026-07-23
 
 ### Added
