@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2026-07-23
+
+### Fixed
+
+- Starting a workout (blank or from an existing template), opening a past session from History, and finishing an active workout all redirected to the marketing page instead of the intended screen — each `navigate()` call was missing the `/app` prefix that every authenticated route now lives under, so the path matched no route and fell through to the catch-all redirect to `/`.
+
 ## [1.2.2] - 2026-07-23
 
 ### Fixed

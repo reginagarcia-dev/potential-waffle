@@ -79,7 +79,7 @@ export function ActiveSessionPage() {
   // Redirect if session is already completed or abandoned
   useEffect(() => {
     if (session && session.status !== "active") {
-      navigate(`/session/${session.id}/summary`);
+      navigate(`/app/session/${session.id}/summary`);
     }
   }, [session, navigate]);
 
