@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2026-07-23
+
+### Fixed
+
+- The 1.2.1 safe-area fix for the marketing page header (`top-[env(safe-area-inset-top)]`) fixed the notch clipping but introduced a new overlap: since the page has no reserved top-inset spacer (unlike the logged-in app's `AppShell`), the sticky header snapped down by the inset immediately, without growing its own box, and covered the hero's "Performance Tracking For Lifters" pill underneath it. Switched to `sticky top-0` with `pt-[env(safe-area-inset-top)]` so the header's box grows to include the inset instead of shifting position — no overlap on notched devices, unchanged on everything else.
+
 ## [1.2.1] - 2026-07-23
 
 ### Fixed
