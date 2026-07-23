@@ -99,14 +99,6 @@ export function ActiveSessionPage() {
     mutation.mutate({ type: "delete_exercise", exerciseId });
   };
 
-  const handleApplySuggestion = (
-    exerciseId: string,
-    weight: number,
-    reps: number | null,
-  ) => {
-    mutation.mutate({ type: "apply_overload_suggestion", exerciseId, weight, reps });
-  };
-
   const handleAddSet = (exerciseId: string, setType?: "warmup" | "working") => {
     mutation.mutate({ type: "add_set", exerciseId, setType });
   };
@@ -300,8 +292,6 @@ export function ActiveSessionPage() {
                 onDeleteExercise={handleDeleteExercise}
                 onTriggerSetEdit={handleTriggerSetEdit}
                 onUpdateSetValue={handleUpdateSetValue}
-                onApplySuggestion={handleApplySuggestion}
-                isApplyingSuggestion={mutation.isPending}
               />
             ))
           ) : (

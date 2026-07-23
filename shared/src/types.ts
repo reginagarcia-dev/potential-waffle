@@ -101,18 +101,6 @@ export interface ProgressSummary {
   }>;
 }
 
-export type SuggestionBasis =
-  | 'increase'
-  | 'hold_reps_up'
-  | 'repeat_no_rpe'
-  | 'repeat_high_rpe';
-
-export interface ProgressionSuggestion {
-  weight: number;
-  reps: number;
-  basis: SuggestionBasis;
-}
-
 export interface LastPerformanceResponse {
   lastWeight: number | null;
   lastReps: number | null;
@@ -124,5 +112,4 @@ export interface LastPerformanceResponse {
     rpe: number | null;
     type: SetType;
   }>;
-  suggestion: ProgressionSuggestion | null;
 }

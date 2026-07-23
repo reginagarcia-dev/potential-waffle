@@ -120,8 +120,8 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` shipped
 
 ## Tier 3 — Big bets (multi-week projects, sequence after Tier 1–2 land)
 
-### 12. [x] Smart progression suggestions
-Shipped as a deterministic RPE-based heuristic (`backend/src/utils/progressionSuggestion.ts`): RPE ≤7 → increase weight, RPE ≥9 → hold/repeat exactly, in between → same weight +1 rep, no RPE logged → safe repeat (never guesses). Surfaced as a dismissible banner on the exercise card in Active Session, wired to the previously-unused `apply_overload_suggestion` mutation and `/exercises/:id/last-performance` endpoint. Scoped to last-completed-session-only (no multi-session trend), uniform apply across all pending working sets (no per-set targets), no LLM involved. Still open for a future iteration: multi-session trend analysis, per-set/pyramid targets, persisted dismissal.
+### 12. [ ] Smart progression suggestions
+Extend the existing "previous weight/reps" prefill (already shown when starting a set) into an actual recommendation engine (e.g., "last time you hit RPE 9 at 135×8 — try 140×6"). Needs a defined progression algorithm and enough historical RPE data to be useful — validate data density before committing. Attempted and reverted once already: the algorithm and banner shipped fine, but there is currently no RPE input anywhere in the set-editing UI (`SetEditSheet.tsx` has the state/plumbing but never renders the field), so `lastRpe` can never be anything but null and every suggestion degenerates to "repeat exactly." Add the RPE input first and confirm it's actually being logged before rebuilding the suggestion layer on top of it.
 
 ### 13. [ ] Structured multi-week programs
 New `Program`/`ProgramWeek` entities beyond the current ad-hoc session + copy-as-template model. Real schema work in `backend/src/db/schema.ts` and session-creation flow changes.
