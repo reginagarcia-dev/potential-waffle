@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.4] - 2026-07-23
+
+### Removed
+
+- Smart progression suggestions banner from Active Session, along with `computeProgressionSuggestion`, `SuggestionBanner`, and the `useLastPerformance` hook. There is currently no way to log an RPE anywhere in the app (the set-edit sheet never got the input added), so the banner's RPE-based branches could never fire and it could only ever suggest "repeat exactly" — not the recommendation engine it was meant to be. Revisit once RPE is actually loggable; see ROADMAP item 12.
+
 ## [1.2.3] - 2026-07-23
 
 ### Fixed
